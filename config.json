@@ -1,0 +1,7 @@
+{
+  "serverIP": "localhost:25565",
+  "username": "123",
+  "memory": "2G",
+  "autoConnect": false,
+  "enableBgm": true
+}

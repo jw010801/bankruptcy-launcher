@@ -1,0 +1,21 @@
+{
+  "currentProfile": "123",
+  "profiles": {
+    "123": {
+      "id": "123",
+      "name": "테스트",
+      "minecraftVersion": "1.20.1",
+      "forgeVersion": "47.2.0",
+      "createdAt": "2025-06-27T19:26:56.046Z",
+      "lastUsed": "2025-06-27T19:26:56.090Z"
+    },
+    "default": {
+      "id": "default",
+      "name": "기본 프로필",
+      "minecraftVersion": "1.20.1",
+      "forgeVersion": "47.2.0",
+      "createdAt": "2025-06-27T19:21:54.085Z",
+      "lastUsed": "2025-06-27T19:21:54.086Z"
+    }
+  }
+}

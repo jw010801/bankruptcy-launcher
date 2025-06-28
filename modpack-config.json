@@ -1,0 +1,54 @@
+{
+  "name": "파산게임 모드팩",
+  "version": "1.0.0",
+  "minecraftVersion": "1.20.1",
+  "modLoader": "fabric",
+  "fabricVersion": "0.14.22",
+  "description": "성능 최적화 및 편의성 모드가 포함된 파산게임 전용 모드팩",
+  "mods": [
+    {
+      "name": "Sodium",
+      "description": "렌더링 성능 최적화",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/AANobbMI/versions/rAfhHfow/sodium-fabric-mc1.20.1-0.5.2.jar",
+      "fileName": "sodium-fabric-mc1.20.1-0.5.2.jar",
+      "modId": "sodium"
+    },
+    {
+      "name": "Lithium",
+      "description": "서버 및 클라이언트 최적화",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/ZSNsJrPI/lithium-fabric-mc1.20.1-0.11.2.jar",
+      "fileName": "lithium-fabric-mc1.20.1-0.11.2.jar",
+      "modId": "lithium"
+    },
+    {
+      "name": "JourneyMap",
+      "description": "실시간 미니맵 및 월드맵",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/lfHFW1FD/versions/hVJqyNLB/journeymap-1.20.1-5.9.7-fabric.jar",
+      "fileName": "journeymap-1.20.1-5.9.7-fabric.jar",
+      "modId": "journeymap"
+    },
+    {
+      "name": "Fabric API",
+      "description": "Fabric 모드 로더 필수 API",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/P7dR8mSH/versions/P7uGFii0/fabric-api-0.87.0+1.20.1.jar",
+      "fileName": "fabric-api-0.87.0+1.20.1.jar",
+      "modId": "fabric-api"
+    },
+    {
+      "name": "ModMenu",
+      "description": "모드 설정 메뉴",
+      "required": false,
+      "downloadUrl": "https://cdn.modrinth.com/data/mOgUt4GM/versions/V4hnfgRO/modmenu-7.2.2.jar",
+      "fileName": "modmenu-7.2.2.jar",
+      "modId": "modmenu"
+    }
+  ],
+  "serverInfo": {
+    "ip": "localhost:25565",
+    "name": "파산게임 서버"
+  }
+} 

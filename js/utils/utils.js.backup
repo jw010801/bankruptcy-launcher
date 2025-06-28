@@ -1,0 +1,354 @@
+/**
+ * 유틸리티 함수 모듈
+ * 공통으로 사용되는 헬퍼 함수들을 정의합니다.
+ */
+
+(function() {
+    'use strict';
+
+    // 전역 유틸리티 객체 생성
+    window.UTILS = {};
+
+    /**
+     * 지연 실행 함수
+     * @param {number} ms - 지연 시간 (밀리초)
+     * @returns {Promise} 지연 후 resolve되는 Promise
+     */
+    window.UTILS.delay = function(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 랜덤 ID 생성
+ * @param {number} length - ID 길이 (기본값: 8)
+ * @returns {string} 랜덤 ID
+ */
+export function generateRandomId(length = 8) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+/**
+ * 날짜 포맷팅
+ * @param {Date|string} date - 포맷할 날짜
+ * @param {string} format - 포맷 형식 ('YYYY-MM-DD', 'MM/DD', 'relative')
+ * @returns {string} 포맷된 날짜 문자열
+ */
+export function formatDate(date, format = 'YYYY-MM-DD') {
+    const d = new Date(date);
+    
+    if (format === 'relative') {
+        const now = new Date();
+        const diffMs = now - d;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return '오늘';
+        if (diffDays === 1) return '어제';
+        if (diffDays < 7) return `${diffDays}일 전`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전`;
+        return `${Math.floor(diffDays / 30)}개월 전`;
+    }
+    
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    
+    if (format === 'YYYY-MM-DD') return `${year}-${month}-${day}`;
+    if (format === 'MM/DD') return `${month}/${day}`;
+    
+    return d.toLocaleDateString();
+}
+
+/**
+ * 파일 크기 포맷팅
+ * @param {number} bytes - 바이트 크기
+ * @returns {string} 포맷된 파일 크기
+ */
+export function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * 문자열 검증
+ * @param {string} str - 검증할 문자열
+ * @param {Object} options - 검증 옵션
+ * @returns {Object} 검증 결과 {valid: boolean, message: string}
+ */
+export function validateString(str, options = {}) {
+    const {
+        minLength = 0,
+        maxLength = Infinity,
+        pattern = null,
+        required = false
+    } = options;
+    
+    if (required && (!str || str.trim() === '')) {
+        return { valid: false, message: '필수 입력 항목입니다.' };
+    }
+    
+    if (str && str.length < minLength) {
+        return { valid: false, message: `최소 ${minLength}자 이상 입력해주세요.` };
+    }
+    
+    if (str && str.length > maxLength) {
+        return { valid: false, message: `최대 ${maxLength}자까지 입력 가능합니다.` };
+    }
+    
+    if (str && pattern && !pattern.test(str)) {
+        return { valid: false, message: '올바른 형식이 아닙니다.' };
+    }
+    
+    return { valid: true, message: '' };
+}
+
+/**
+ * 마인크래프트 사용자명 검증
+ * @param {string} username - 사용자명
+ * @returns {Object} 검증 결과
+ */
+export function validateMinecraftUsername(username) {
+    const pattern = /^[a-zA-Z0-9_]{3,16}$/;
+    return validateString(username, {
+        minLength: 3,
+        maxLength: 16,
+        pattern,
+        required: true
+    });
+}
+
+/**
+ * 서버 주소 검증
+ * @param {string} serverAddress - 서버 주소
+ * @returns {Object} 검증 결과
+ */
+export function validateServerAddress(serverAddress) {
+    const pattern = /^[a-zA-Z0-9.-]+(?::[0-9]+)?$/;
+    return validateString(serverAddress, {
+        pattern,
+        required: true
+    });
+}
+
+/**
+ * 안전한 JSON 파싱
+ * @param {string} jsonString - JSON 문자열
+ * @param {*} defaultValue - 파싱 실패 시 기본값
+ * @returns {*} 파싱된 객체 또는 기본값
+ */
+export function safeJsonParse(jsonString, defaultValue = null) {
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.warn('JSON 파싱 실패:', error);
+        return defaultValue;
+    }
+}
+
+/**
+ * 안전한 JSON 문자열화
+ * @param {*} obj - 문자열화할 객체
+ * @param {string} defaultValue - 실패 시 기본값
+ * @returns {string} JSON 문자열
+ */
+export function safeJsonStringify(obj, defaultValue = '{}') {
+    try {
+        return JSON.stringify(obj, null, 2);
+    } catch (error) {
+        console.warn('JSON 문자열화 실패:', error);
+        return defaultValue;
+    }
+}
+
+/**
+ * 디바운스 함수
+ * @param {Function} func - 실행할 함수
+ * @param {number} wait - 대기 시간 (밀리초)
+ * @returns {Function} 디바운스된 함수
+ */
+export function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+/**
+ * 스로틀 함수
+ * @param {Function} func - 실행할 함수
+ * @param {number} limit - 제한 시간 (밀리초)
+ * @returns {Function} 스로틀된 함수
+ */
+export function throttle(func, limit) {
+    let inThrottle;
+    return function executedFunction(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+/**
+ * 배열을 청크 단위로 분할
+ * @param {Array} array - 분할할 배열
+ * @param {number} size - 청크 크기
+ * @returns {Array} 분할된 배열들의 배열
+ */
+export function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+}
+
+/**
+ * 객체 깊은 복사
+ * @param {*} obj - 복사할 객체
+ * @returns {*} 복사된 객체
+ */
+export function deepClone(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (obj instanceof Date) return new Date(obj.getTime());
+    if (obj instanceof Array) return obj.map(item => deepClone(item));
+    if (typeof obj === 'object') {
+        const clonedObj = {};
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                clonedObj[key] = deepClone(obj[key]);
+            }
+        }
+        return clonedObj;
+    }
+}
+
+/**
+ * URL에서 파일명 추출
+ * @param {string} url - URL
+ * @returns {string} 파일명
+ */
+export function getFilenameFromUrl(url) {
+    return url.split('/').pop().split('?')[0];
+}
+
+/**
+ * 프로그래스 바 업데이트
+ * @param {HTMLElement} progressElement - 프로그래스 바 요소
+ * @param {number} percentage - 진행률 (0-100)
+ * @param {string} text - 표시할 텍스트
+ */
+export function updateProgress(progressElement, percentage, text = '') {
+    if (!progressElement) return;
+    
+    const fill = progressElement.querySelector('.progress-fill');
+    const textElement = progressElement.querySelector('.progress-text');
+    
+    if (fill) {
+        fill.style.width = `${Math.max(0, Math.min(100, percentage))}%`;
+    }
+    
+    if (textElement && text) {
+        textElement.textContent = text;
+    }
+}
+
+/**
+ * 에러 메시지 표시
+ * @param {string} message - 에러 메시지
+ * @param {string} type - 메시지 타입 ('error', 'success', 'warning', 'info')
+ * @param {number} duration - 표시 시간 (밀리초, 0이면 수동 닫기)
+ */
+export function showMessage(message, type = 'info', duration = 3000) {
+    // 기존 메시지 제거
+    const existingMessage = document.querySelector('.message-toast');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // 새 메시지 생성
+    const messageElement = document.createElement('div');
+    messageElement.className = `message-toast message-${type}`;
+    messageElement.textContent = message;
+    
+    // 스타일 적용
+    messageElement.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    
+    // 타입별 색상
+    const colors = {
+        error: '#e74c3c',
+        success: '#27ae60',
+        warning: '#f39c12',
+        info: '#3498db'
+    };
+    messageElement.style.backgroundColor = colors[type] || colors.info;
+    
+    // DOM에 추가
+    document.body.appendChild(messageElement);
+    
+    // 애니메이션 시작
+    setTimeout(() => {
+        messageElement.style.opacity = '1';
+        messageElement.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // 자동 제거
+    if (duration > 0) {
+        setTimeout(() => {
+            messageElement.style.opacity = '0';
+            messageElement.style.transform = 'translateX(100%)';
+            setTimeout(() => messageElement.remove(), 300);
+        }, duration);
+    }
+    
+    return messageElement;
+}
+
+// 브라우저 호환성을 위한 CommonJS 내보내기도 지원
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        delay,
+        generateRandomId,
+        formatDate,
+        formatFileSize,
+        validateString,
+        validateMinecraftUsername,
+        validateServerAddress,
+        safeJsonParse,
+        safeJsonStringify,
+        debounce,
+        throttle,
+        chunkArray,
+        deepClone,
+        getFilenameFromUrl,
+        updateProgress,
+        showMessage
+    };
+} 
