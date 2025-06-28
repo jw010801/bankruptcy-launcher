@@ -21,6 +21,8 @@
         </div>
     </div>
 
+
+
     <!-- 메인 컨테이너 -->
     <div class="container">
         <!-- 헤더 -->
@@ -207,6 +209,21 @@
                         <span class="checkmark"></span>
                         배경음악 재생
                     </label>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="launcher-action">게임 시작 후 런처 동작:</label>
+                    <select id="launcher-action">
+                        <option value="close" selected>🔋 런처 종료 (추천 - 리소스 0%)</option>
+                        <option value="minimize">📱 런처 최소화 (메모리 ~50MB)</option>
+                        <option value="keep">💻 런처 유지 (메모리 ~100MB)</option>
+                    </select>
+                    <div class="setting-description">
+                        <strong>📊 리소스 효율성:</strong><br>
+                        • <span style="color: #27ae60;"><strong>런처 종료</strong></span>: 완전한 리소스 해방, 최대 성능<br>
+                        • <span style="color: #f39c12;">런처 최소화</span>: 게임 종료 감지 + 자동 복원<br>
+                        • <span style="color: #e74c3c;">런처 유지</span>: 편의성 우선, 리소스 사용 많음
+                    </div>
                 </div>
                 
                 <div class="setting-group">

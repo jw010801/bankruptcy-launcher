@@ -57,6 +57,9 @@ class MainController {
             await this.authManager.initialize();
             console.log('✅ AuthManager 새 인스턴스 생성 및 초기화 완료');
             
+            // window 객체에 할당 (다른 모듈에서 접근 가능하도록)
+            window.authManager = this.authManager;
+            
             // 자동 로그인 체크
             console.log('🔍 저장된 인증 정보 확인 중...');
             await this.authManager.checkSavedAuth();
@@ -396,6 +399,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }, 1000); // 1초 지연으로 증가
 });
+
+
 
 // 전역으로 내보내기
 if (typeof module !== 'undefined' && module.exports) {

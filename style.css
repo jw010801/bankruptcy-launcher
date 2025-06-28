@@ -978,6 +978,22 @@ body {
     background: #e55a2b;
 }
 
+/* 설정 설명 스타일 */
+.setting-description {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border-left: 3px solid #ff6b35;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #cccccc;
+}
+
+.setting-description strong {
+    color: #ff6b35;
+}
+
 /* 알림 스타일 - 위치 조정 */
 .notification {
     position: fixed;
@@ -1400,4 +1416,5 @@ body {
 .error-suggestion {
     color: #cccccc;
     font-size: 0.9em;
-} 
+}
+

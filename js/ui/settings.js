@@ -47,6 +47,7 @@
             this.usernameInput = document.getElementById('username');
             this.memorySelect = document.getElementById('memory-allocation');
             this.autoConnectCheck = document.getElementById('auto-connect');
+            this.launcherActionSelect = document.getElementById('launcher-action');
             this.masterVolumeSlider = document.getElementById('master-volume');
             this.bgmVolumeSlider = document.getElementById('bgm-volume');
             this.sfxVolumeSlider = document.getElementById('sfx-volume');
@@ -222,6 +223,7 @@
                 username: '',
                 memory: '2G',
                 autoConnect: false,
+                launcherAction: 'minimize', // 게임 시작 후 런처 동작 (minimize/keep/close)
                 enableBgm: true,
                 authDuration: 14,
                 masterVolume: 0.7,
@@ -244,6 +246,7 @@
                 if (this.usernameInput) this.usernameInput.value = this.currentSettings.username || '';
                 if (this.memorySelect) this.memorySelect.value = this.currentSettings.memory || '2G';
                 if (this.autoConnectCheck) this.autoConnectCheck.checked = this.currentSettings.autoConnect || false;
+                if (this.launcherActionSelect) this.launcherActionSelect.value = this.currentSettings.launcherAction || 'minimize';
                 
                 // 오디오 설정
                 if (this.masterVolumeSlider) {
@@ -290,6 +293,7 @@
                     username: this.usernameInput?.value || '',
                     memory: this.memorySelect?.value || '2G',
                     autoConnect: this.autoConnectCheck?.checked || false,
+                    launcherAction: this.launcherActionSelect?.value || 'minimize',
                     enableBgm: this.enableBgmCheck?.checked !== false,
                     authDuration: parseInt(this.authDurationSelect?.value) || 14,
                     masterVolume: (this.masterVolumeSlider?.value || 70) / 100,

@@ -15,10 +15,12 @@
 
         async init() {
             try {
-                // Electron IPC 초기화
-                if (typeof window !== 'undefined' && window.require) {
-                    const { ipcRenderer } = window.require('electron');
-                    this.ipcRenderer = ipcRenderer;
+                // Electron IPC 초기화 (contextBridge 방식)
+                if (typeof window !== 'undefined' && window.electronAPI) {
+                    this.ipcRenderer = window.electronAPI;
+                    console.log('✅ IPC 통신 설정됨 (contextBridge)');
+                } else {
+                    console.log('⚠️ Electron API 없음 - 시뮬레이션 모드로 실행');
                 }
                 
                 console.log('🎮 GameManager 초기화 완료');
@@ -41,7 +43,7 @@
                 console.log('🚀 마인크래프트 실행 시작...');
 
                 // 로그인 상태 확인
-                if (!window.authManager || !window.authManager.isAuthenticated()) {
+                if (!window.authManager || !window.authManager.isLoggedIn()) {
                     if (window.notificationManager) {
                         window.notificationManager.warning('먼저 로그인해주세요!');
                     }
@@ -96,8 +98,10 @@
                         window.progressManager.updateProgress('play', 100, '게임 실행 완료!');
                     }
                     
+                    // 상세한 실행 정보 표시
+                    const message = launchResult.message || '마인크래프트가 실행되었습니다!';
                     if (window.notificationManager) {
-                        window.notificationManager.success('마인크래프트가 실행되었습니다!');
+                        window.notificationManager.success(message);
                     }
                     
                     if (window.audioManager) {
@@ -105,6 +109,17 @@
                     }
                     
                     console.log('✅ 마인크래프트 실행 완료');
+                    
+                    // 백엔드 디버그 정보 표시
+                    if (launchResult.debug) {
+                        console.log('🔍 실행 방법:', launchResult.debug.method);
+                        console.log('🔍 런처 경로:', launchResult.debug.launcherPath);
+                        console.log('🔍 프로세스 시작됨:', launchResult.debug.processStarted);
+                    }
+                    
+                    // 게임 실행 후 런처 동작 처리
+                    await this.handlePostLaunch();
+                    
                 } else {
                     throw new Error(launchResult.error || '게임 실행 실패');
                 }
@@ -130,6 +145,82 @@
                 }
             }
         }
+
+        /**
+         * 게임 실행 후 런처 동작 처리 (단순화)
+         */
+        async handlePostLaunch() {
+            try {
+                console.log('🎮 게임 실행 후 처리 시작...');
+                
+                // 1. 브금 정지
+                console.log('🔇 브금 정지');
+                if (window.audioManager) {
+                    window.audioManager.pauseBGM();
+                }
+                
+                // 2. 진행률 바 숨기기 (약간의 딜레이)
+                setTimeout(() => {
+                    if (window.progressManager) {
+                        window.progressManager.hideProgress('play');
+                    }
+                }, 2000);
+                
+                // 3. 설정에 따른 런처 동작
+                const settings = window.storageManager ? 
+                    await window.storageManager.loadConfig() : 
+                    { launcherAction: 'close' };
+                
+                const launcherAction = settings.launcherAction || 'close';
+                
+                // 3초 후 설정된 동작 수행 (사용자가 메시지를 볼 시간 제공)
+                setTimeout(async () => {
+                    try {
+                        switch (launcherAction) {
+                            case 'minimize':
+                                console.log('🪟 게임 시작 후 런처 최소화');
+                                if (this.ipcRenderer) {
+                                    await this.ipcRenderer.invoke('window-minimize');
+                                    console.log('✅ 런처 최소화 완료');
+                                }
+                                break;
+                                
+                            case 'close':
+                                console.log('🚪 게임 시작 후 런처 종료 (리소스 완전 해방)');
+                                
+                                // 종료 전 사용자에게 안내
+                                if (window.notificationManager) {
+                                    window.notificationManager.success('🔋 런처가 종료됩니다 - 리소스 절약 모드');
+                                }
+                                
+                                // 1초 후 종료 (안내 메시지를 볼 시간 제공)
+                                setTimeout(async () => {
+                                    if (this.ipcRenderer) {
+                                        await this.ipcRenderer.invoke('window-close');
+                                        console.log('✅ 런처 종료 완료 - 메모리 0MB, CPU 0%');
+                                    }
+                                }, 1000);
+                                return;
+                                
+                            case 'keep':
+                            default:
+                                console.log('🪟 런처 유지 (설정에 따라)');
+                                break;
+                        }
+                        
+                    } catch (error) {
+                        console.warn(`⚠️ 런처 동작 실패 (${launcherAction}):`, error);
+                    }
+                }, 3000);
+                
+                console.log('✅ 게임 실행 후 처리 완료');
+                
+            } catch (error) {
+                console.error('❌ 게임 실행 후 처리 오류:', error);
+            }
+        }
+
+
 
         /**
          * 설치 상태 확인
@@ -204,18 +295,34 @@
          */
         async launchGame(authData) {
             try {
+                console.log('🔍 IPC 상태 확인:', !!this.ipcRenderer);
+                console.log('🔍 AuthData:', authData ? 'OK' : 'NULL');
+                
                 if (this.ipcRenderer) {
-                    const result = await this.ipcRenderer.invoke('launch-minecraft', {
+                    console.log('🚀 IPC로 launch-minecraft 호출...');
+                    
+                    const launchData = {
                         authData: authData,
                         serverIP: this.getServerIP(),
                         memory: this.getMemoryAllocation(),
                         autoConnect: this.getAutoConnect()
-                    });
+                    };
+                    
+                    console.log('📋 Launch 데이터:', launchData);
+                    
+                    const result = await this.ipcRenderer.invoke('launch-minecraft', launchData);
+                    
+                    console.log('📥 IPC 응답:', result);
                     return result;
                 } else {
+                    console.log('⚠️ IPC 없음 - 시뮬레이션 실행');
                     // 개발 모드에서는 시뮬레이션
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    return { success: true };
+                    return { 
+                        success: true, 
+                        message: '시뮬레이션 모드 - 실제 마인크래프트를 수동으로 실행하세요.',
+                        debug: { method: 'simulation' }
+                    };
                 }
             } catch (error) {
                 console.error('❌ 게임 실행 실패:', error);

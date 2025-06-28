@@ -17,7 +17,7 @@
   "author": "ljw01",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^22.0.0",
+    "electron": "^37.1.0",
     "electron-builder": "^23.0.0"
   },
   "dependencies": {
@@ -25,10 +25,10 @@
     "@xmcl/core": "^2.14.1",
     "@xmcl/installer": "^6.1.0",
     "@xmcl/user": "^4.2.0",
+    "axios": "^1.6.0",
     "child_process": "^1.0.2",
     "fs-extra": "^11.1.0",
-    "node-fetch": "^3.3.2",
-    "axios": "^1.6.0"
+    "node-fetch": "^3.3.2"
   },
   "build": {
     "appId": "com.ljw01.bankruptcy-launcher",

@@ -134,7 +134,8 @@
                 authDuration: 14,
                 autoUpdate: true,
                 debugMode: false,
-                keepLogins: true
+                keepLogins: true,
+                launcherAction: 'close' // 게임 시작 후 런처 동작 기본값 (리소스 절약)
             };
         }
 

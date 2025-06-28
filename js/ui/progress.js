@@ -217,6 +217,41 @@
         }
 
         /**
+         * 진행률 바 숨기기 (별칭)
+         * @param {string} id - 진행률 바 ID
+         */
+        hideProgress(id) {
+            this.remove(id);
+        }
+
+        /**
+         * 진행률 바 표시 (별칭)
+         * @param {string} id - 진행률 바 ID
+         */
+        showProgress(id) {
+            // 이미 존재하면 표시만, 없으면 생성
+            if (!this.progressBars.has(id)) {
+                // 기본 컨테이너를 찾아서 생성
+                const container = document.querySelector('.progress-container-area') || 
+                                document.querySelector('.main-content') || 
+                                document.body;
+                this.create(id, container);
+            } else {
+                this.setVisible(id, true);
+            }
+        }
+
+        /**
+         * 진행률 업데이트 (별칭)
+         * @param {string} id - 진행률 바 ID
+         * @param {number} value - 진행률 (0-100)
+         * @param {string} label - 라벨 텍스트 (선택사항)
+         */
+        updateProgress(id, value, label) {
+            this.update(id, value, label);
+        }
+
+        /**
          * 모든 진행률 바 제거
          */
         clear() {
