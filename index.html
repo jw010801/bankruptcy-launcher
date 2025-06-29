@@ -188,11 +188,48 @@
                 <div class="setting-group">
                     <label for="memory-allocation">메모리 할당:</label>
                     <select id="memory-allocation">
-                        <option value="1G">1GB</option>
-                        <option value="2G">2GB</option>
-                        <option value="4G">4GB</option>
-                        <option value="8G">8GB</option>
+                        <option value="2G">2GB (최소)</option>
+                        <option value="4G" selected>4GB (권장)</option>
+                        <option value="6G">6GB (셰이더 사용)</option>
+                        <option value="8G">8GB (고성능)</option>
+                        <option value="12G">12GB (최고 성능)</option>
+                        <option value="16G">16GB (극한 성능)</option>
                     </select>
+                    <div class="setting-description">
+                        <strong>💡 메모리 할당 가이드:</strong><br>
+                        • <span style="color: #e74c3c;">2GB</span>: 바닐라 마인크래프트<br>
+                        • <span style="color: #f39c12;">4GB</span>: 가벼운 모드팩<br>
+                        • <span style="color: #27ae60;">6GB+</span>: 셰이더 + 고해상도 텍스처<br>
+                        • <span style="color: #3498db;">8GB+</span>: 대용량 모드팩 + 셰이더
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="performance-profile">성능 프로파일:</label>
+                    <select id="performance-profile">
+                        <option value="balanced">⚖️ 균형 (기본)</option>
+                        <option value="performance">🚀 성능 우선</option>
+                        <option value="quality">🎨 화질 우선</option>
+                        <option value="battery">🔋 배터리 절약</option>
+                    </select>
+                    <div class="setting-description">
+                        <strong>🎯 성능 프로파일 설명:</strong><br>
+                        • <strong>균형</strong>: 안정적인 FPS와 적당한 화질<br>
+                        • <strong>성능 우선</strong>: 최대 FPS, GPU 가속 강화<br>
+                        • <strong>화질 우선</strong>: 높은 해상도, 안티앨리어싱<br>
+                        • <strong>배터리 절약</strong>: 저전력 모드, FPS 제한
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="gpu-optimization" checked>
+                        <span class="checkmark"></span>
+                        GPU 가속 최적화
+                    </label>
+                    <div class="setting-description">
+                        <small>OpenGL 최적화, DirectDraw 비활성화, LWJGL 성능 향상 등</small>
+                    </div>
                 </div>
                 
                 <div class="setting-group">

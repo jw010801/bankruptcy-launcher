@@ -78,12 +78,27 @@
                     await this.installMinecraft();
                 }
 
-                if (!installStatus.forge) {
+                if (!installStatus.fabric) {
                     if (window.progressManager) {
-                        window.progressManager.updateProgress('play', 60, 'Forge 설치 중...');
+                        window.progressManager.updateProgress('play', 60, 'Fabric 설치 중...');
                     }
-                    await this.installForge();
+                    await this.installFabric();
                 }
+
+                // 모드팩 설치 확인 및 설치
+                if (window.progressManager) {
+                    window.progressManager.updateProgress('play', 70, '모드 설치 상태 확인 중...');
+                }
+                
+                const needsModInstall = await this.checkModsNeedInstall();
+                if (needsModInstall) {
+                    if (window.progressManager) {
+                        window.progressManager.updateProgress('play', 75, '필수 모드 설치 중...');
+                    }
+                    await this.installModpack();
+                }
+
+
 
                 // 게임 실행
                 if (window.progressManager) {
@@ -234,7 +249,7 @@
                     // 기본값 반환 (개발 모드)
                     return {
                         minecraft: true,
-                        forge: true,
+                        fabric: true,
                         mods: []
                     };
                 }
@@ -242,7 +257,7 @@
                 console.error('설치 상태 확인 실패:', error);
                 return {
                     minecraft: false,
-                    forge: false,
+                    fabric: false,
                     mods: []
                 };
             }
@@ -270,12 +285,12 @@
         }
 
         /**
-         * Forge 설치
+         * Fabric 설치
          */
-        async installForge() {
+        async installFabric() {
             try {
                 if (this.ipcRenderer) {
-                    const result = await this.ipcRenderer.invoke('install-forge');
+                    const result = await this.ipcRenderer.invoke('install-fabric');
                     if (!result.success) {
                         throw new Error(result.error);
                     }
@@ -283,12 +298,57 @@
                     // 개발 모드에서는 시뮬레이션
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 }
-                console.log('✅ Forge 설치 완료');
+                console.log('✅ Fabric 설치 완료');
             } catch (error) {
-                console.error('❌ Forge 설치 실패:', error);
+                console.error('❌ Fabric 설치 실패:', error);
                 throw error;
             }
         }
+
+        /**
+         * 모드 설치 필요 여부 확인
+         */
+        async checkModsNeedInstall() {
+            try {
+                if (this.ipcRenderer) {
+                    const result = await this.ipcRenderer.invoke('check-modpack-updates');
+                    console.log('🔍 모드팩 상태 확인:', result);
+                    return result.needsUpdate || false;
+                } else {
+                    // 개발 모드에서는 항상 설치 필요로 가정
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ 모드 설치 상태 확인 실패:', error);
+                // 오류 시 안전하게 설치 필요로 가정
+                return true;
+            }
+        }
+
+        /**
+         * 모드팩 설치
+         */
+        async installModpack() {
+            try {
+                console.log('📦 모드팩 설치 시작...');
+                if (this.ipcRenderer) {
+                    const result = await this.ipcRenderer.invoke('install-modpack');
+                    if (!result.success) {
+                        throw new Error(result.error);
+                    }
+                    console.log('✅ 모드팩 설치 완료:', result.message);
+                } else {
+                    // 개발 모드에서는 시뮬레이션
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    console.log('✅ 모드팩 설치 완료 (시뮬레이션)');
+                }
+            } catch (error) {
+                console.error('❌ 모드팩 설치 실패:', error);
+                throw error;
+            }
+        }
+
+
 
         /**
          * 게임 실행
@@ -305,7 +365,9 @@
                         authData: authData,
                         serverIP: this.getServerIP(),
                         memory: this.getMemoryAllocation(),
-                        autoConnect: this.getAutoConnect()
+                        autoConnect: this.getAutoConnect(),
+                        performanceProfile: this.getPerformanceProfile(),
+                        gpuOptimization: this.getGpuOptimization()
                     };
                     
                     console.log('📋 Launch 데이터:', launchData);
@@ -352,6 +414,22 @@
         getAutoConnect() {
             const autoConnectCheck = document.getElementById('auto-connect');
             return autoConnectCheck ? autoConnectCheck.checked : false;
+        }
+
+        /**
+         * 성능 프로파일 가져오기
+         */
+        getPerformanceProfile() {
+            const performanceSelect = document.getElementById('performance-profile');
+            return performanceSelect ? performanceSelect.value || 'balanced' : 'balanced';
+        }
+
+        /**
+         * GPU 최적화 설정 가져오기
+         */
+        getGpuOptimization() {
+            const gpuOptCheck = document.getElementById('gpu-optimization');
+            return gpuOptCheck ? gpuOptCheck.checked : true;
         }
 
         /**

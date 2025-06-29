@@ -3,11 +3,12 @@ const path = require('path');
 const fs = require('fs-extra');
 const { spawn } = require('child_process');
 const os = require('os');
+
 const MinecraftAuth = require('./minecraft-auth');
 const ModManager = require('./mod-manager');
 const FabricInstaller = require('./fabric-installer');
 
-// Minecraft Launcher Core 라이브러리 import (Context7 방식)
+// Minecraft Launcher Core 라이브러리 import
 const { launch, Version, diagnose } = require('@xmcl/core');
 const { installJreFromMojang } = require('@xmcl/installer');
 
@@ -16,18 +17,7 @@ let minecraftAuth;
 let modManager;
 let fabricInstaller;
 
-// Windows 한글 인코딩 설정 (Electron 환경)
-if (process.platform === 'win32') {
-    try {
-        // Windows 콘솔 코드페이지를 UTF-8으로 설정
-        const { spawn } = require('child_process');
-        spawn('chcp', ['65001'], { stdio: 'ignore' }).on('close', () => {
-            console.log('✅ Windows UTF-8 인코딩 설정 완료');
-        });
-    } catch (e) {
-        console.warn('⚠️ 인코딩 설정 실패:', e.message);
-    }
-}
+
 
 // 안전한 로그 함수
 function safeLog(message) {
@@ -81,9 +71,9 @@ app.whenReady().then(() => {
         minecraftAuth = new MinecraftAuth();
         modManager = new ModManager();
         fabricInstaller = new FabricInstaller();
-        safeLog('Launcher initialized successfully');
+        safeLog('✅ 런처 초기화 완료');
     } catch (error) {
-        safeLog('Initialization error: ' + error.message);
+        safeLog('❌ 초기화 오류: ' + error.message);
     }
 });
 
@@ -107,8 +97,6 @@ ipcMain.handle('window-minimize', () => {
     }
 });
 
-
-
 // 윈도우 종료
 ipcMain.handle('window-close', () => {
     if (mainWindow) {
@@ -117,8 +105,6 @@ ipcMain.handle('window-close', () => {
     }
     return { success: false, error: '윈도우가 없습니다' };
 });
-
-
 
 // 외부 URL 열기
 ipcMain.on('open-external-url', (event, url) => {
@@ -129,25 +115,21 @@ ipcMain.on('open-external-url', (event, url) => {
 ipcMain.handle('microsoft-login', async (event) => {
     try {
         console.log('🔐 Microsoft 로그인 요청 수신');
-        console.log('📋 minecraftAuth 인스턴스 상태:', !!minecraftAuth);
         
         if (!minecraftAuth) {
-            console.error('❌ MinecraftAuth 인스턴스가 없습니다');
             return {
                 success: false,
                 error: 'MinecraftAuth 인스턴스가 초기화되지 않았습니다'
             };
         }
         
-        // Device Code 콜백 설정 (UI에 실시간 전달)
+        // Device Code 콜백 설정
         minecraftAuth.onDeviceCodeReceived = (deviceCodeInfo) => {
             console.log('📱 Device Code 정보를 렌더러로 전송:', deviceCodeInfo.userCode);
             event.sender.send('device-code-received', deviceCodeInfo);
         };
         
-        console.log('🚀 Microsoft 인증 시작...');
         const authData = await minecraftAuth.authenticate();
-        console.log('📋 인증 결과:', authData ? '성공' : '실패');
         
         if (authData && authData.success) {
             console.log('✅ Microsoft 인증 성공:', authData.data?.profile?.name || '알 수 없음');
@@ -164,7 +146,6 @@ ipcMain.handle('microsoft-login', async (event) => {
         }
     } catch (error) {
         console.error('❌ Microsoft 인증 오류:', error);
-        console.error('❌ 에러 스택:', error.stack);
         return {
             success: false,
             error: error.message
@@ -176,10 +157,7 @@ ipcMain.handle('microsoft-logout', async () => {
     try {
         console.log('🚪 Microsoft 로그아웃 요청 수신');
         await minecraftAuth.logout();
-        
-        return {
-            success: true
-        };
+        return { success: true };
     } catch (error) {
         console.error('❌ Microsoft 로그아웃 오류:', error);
         return {
@@ -218,36 +196,49 @@ ipcMain.handle('launch-minecraft', async (event, launchData) => {
     try {
         console.log('🚀 마인크래프트 실행 요청:', launchData);
         
-        // 마인크래프트 경로 (Context7 방식: 문자열로 직접 사용)
         const gamePath = getMinecraftDir();
-        console.log('📍 마인크래프트 디렉토리:', gamePath);
-        
-        // Java 경로 자동 감지
         const javaPath = await findBestJavaPath();
-        console.log('☕ Java 경로:', javaPath);
         
-        // 버전 확인 (기본값: 1.20.1)
-        const version = launchData.version || '1.20.1';
-        console.log('🎮 실행할 버전:', version);
+        // Fabric 버전 확인
+        let version = launchData.version;
+        if (!version) {
+            try {
+                const modpackConfig = await fs.readJson(path.join(__dirname, 'modpack-config.json'));
+                version = `fabric-loader-${modpackConfig.fabricVersion}-${modpackConfig.minecraftVersion}`;
+                console.log('🧵 Fabric 버전 자동 감지:', version);
+            } catch (error) {
+                console.warn('⚠️ 모드팩 설정 로드 실패, 바닐라 버전 사용:', error.message);
+                version = '1.20.1';
+            }
+        }
         
         try {
-            // 버전 정보 파싱 (Context7 방식: 경로를 문자열로 전달)
+            // 버전 정보 파싱
             const resolvedVersion = await Version.parse(gamePath, version);
             console.log('✅ 버전 정보 파싱 성공:', resolvedVersion.id);
             
-            // 필수 파일 진단 (Context7 방식)
+            // 필수 파일 진단
             const issues = await diagnose(resolvedVersion.id, gamePath);
             if (issues.issues && issues.issues.length > 0) {
                 console.warn('⚠️ 마인크래프트 파일 문제 발견:', issues.issues.length, '개');
-                for (const issue of issues.issues) {
-                    console.warn(`  - ${issue.role}: ${issue.file || 'Unknown'}`);
-                }
             }
             
             // 사용자 인증 정보 가져오기
             const authData = launchData.authData || await getAuthData();
             
-            // 마인크래프트 실행 (Context7 방식: 단순화된 옵션)
+            // 메모리 설정
+            const memory = launchData.memory || '4G';
+            const memoryValue = parseInt(memory.replace('G', ''));
+            
+            // 성능 프로파일 설정
+            const performanceProfile = launchData.performanceProfile || 'balanced';
+            const gpuOptimization = launchData.gpuOptimization !== false;
+            
+            // 성능 프로파일별 JVM 옵션 생성
+            const jvmArgs = generateJVMArgs(memoryValue, memory, performanceProfile, gpuOptimization);
+            console.log(`🎯 성능 프로파일: ${performanceProfile}, GPU 최적화: ${gpuOptimization}`);
+            
+            // 마인크래프트 실행
             console.log('🚀 마인크래프트 실행 중...');
             const process = await launch({
                 gamePath: gamePath,
@@ -265,15 +256,10 @@ ipcMain.handle('launch-minecraft', async (event, launchData) => {
                 extraExecOption: {
                     detached: true
                 },
-                extraJVMArgs: [
-                    '-Xms1G',
-                    '-Xmx2G'
-                ]
+                extraJVMArgs: jvmArgs
             });
             
             console.log('✅ 마인크래프트 실행 성공! PID:', process.pid);
-            
-            // 프로세스 분리 (런처와 독립적으로 실행)
             process.unref();
             
             return {
@@ -292,7 +278,6 @@ ipcMain.handle('launch-minecraft', async (event, launchData) => {
         } catch (versionError) {
             console.error('❌ 버전 파싱 실패:', versionError.message);
             
-            // 마인크래프트가 설치되지 않은 경우 안내
             if (versionError.message.includes('not found') || versionError.message.includes('ENOENT')) {
                 return {
                     success: false,
@@ -322,6 +307,243 @@ ipcMain.handle('launch-minecraft', async (event, launchData) => {
         };
     }
 });
+
+// 성능 프로파일별 JVM 옵션 생성
+function generateJVMArgs(memoryValue, memory, performanceProfile, gpuOptimization) {
+    console.log(`🔧 JVM 옵션 생성: 메모리=${memory}, 프로파일=${performanceProfile}, GPU최적화=${gpuOptimization}`);
+    
+    // 기본 메모리 설정
+    const baseArgs = [
+        `-Xms${Math.max(2, Math.floor(memoryValue / 2))}G`,
+        `-Xmx${memory}`,
+        
+        // 기본 시스템 설정
+        '-Djava.awt.headless=false',
+        '-Dfile.encoding=UTF-8',
+        '-Dusing.aikars.flags=https://mcflags.emc.gs',
+        '-Daikars.new.flags=true'
+    ];
+    
+    // 성능 프로파일별 추가 옵션
+    let profileArgs = [];
+    
+    switch (performanceProfile) {
+        case 'performance':
+            // 🚀 성능 우선 모드 - 최대 FPS, 최소 지연시간
+            profileArgs = [
+                // 가장 공격적인 G1GC 설정
+                '-XX:+UseG1GC',
+                '-XX:+ParallelRefProcEnabled',
+                '-XX:MaxGCPauseMillis=50', // 극도로 짧은 GC 중단 시간
+                '-XX:+UnlockExperimentalVMOptions',
+                '-XX:+DisableExplicitGC',
+                '-XX:+AlwaysPreTouch',
+                '-XX:G1NewSizePercent=35', // 더 큰 Young Generation
+                '-XX:G1ReservePercent=15',
+                '-XX:G1HeapRegionSize=32M', // 더 큰 힙 리전
+                '-XX:G1HeapWastePercent=2', // 낮은 낭비 허용치
+                '-XX:G1MixedGCCountTarget=2', // 더 빈번한 Mixed GC
+                '-XX:InitiatingHeapOccupancyPercent=8', // 매우 일찍 GC 시작
+                '-XX:G1MixedGCLiveThresholdPercent=95',
+                '-XX:G1RSetUpdatingPauseTimePercent=3',
+                '-XX:SurvivorRatio=16', // 더 작은 Survivor 공간
+                '-XX:+PerfDisableSharedMem',
+                '-XX:MaxTenuringThreshold=1',
+                
+                // 최고 성능 JIT 최적화
+                '-XX:+TieredCompilation',
+                '-XX:TieredStopAtLevel=4',
+                '-XX:+UseCodeCacheFlushing',
+                '-XX:ReservedCodeCacheSize=1024m', // 더 큰 코드 캐시
+                '-XX:InitialCodeCacheSize=256m',
+                '-XX:+OptimizeStringConcat',
+                '-XX:+UseStringDeduplication',
+                
+                // 메모리 최적화
+                '-XX:+UseCompressedOops',
+                '-XX:+UseLargePages',
+                '-XX:LargePageSizeInBytes=4m',
+                '-XX:NativeMemoryTracking=off',
+                
+                // 스레드 최적화
+                '-XX:+UseThreadPriorities',
+                '-XX:ThreadPriorityPolicy=1',
+                '-XX:+UseFPUForSpilling',
+                
+                // 네트워킹 최적화
+                '-Dnetworkaddress.cache.ttl=15',
+                '-Djava.net.preferIPv4Stack=true',
+                
+                // 프로파일 식별
+                '-DperformanceProfile=performance'
+            ];
+            break;
+            
+        case 'quality':
+            // 🎨 화질 우선 모드 - 안정성과 품질 중심
+            profileArgs = [
+                // 안정적인 G1GC 설정
+                '-XX:+UseG1GC',
+                '-XX:+ParallelRefProcEnabled',
+                '-XX:MaxGCPauseMillis=200', // 더 긴 GC 중단 시간 허용
+                '-XX:+UnlockExperimentalVMOptions',
+                '-XX:+DisableExplicitGC',
+                '-XX:+AlwaysPreTouch',
+                '-XX:G1NewSizePercent=25',
+                '-XX:G1ReservePercent=25', // 더 많은 예약 공간
+                '-XX:G1HeapRegionSize=16M',
+                '-XX:G1HeapWastePercent=8', // 더 높은 낭비 허용치
+                '-XX:G1MixedGCCountTarget=6', // 더 점진적인 GC
+                '-XX:InitiatingHeapOccupancyPercent=20',
+                '-XX:G1MixedGCLiveThresholdPercent=85',
+                '-XX:G1RSetUpdatingPauseTimePercent=8',
+                '-XX:SurvivorRatio=32',
+                '-XX:+PerfDisableSharedMem',
+                '-XX:MaxTenuringThreshold=2',
+                
+                // 품질 중심 JIT 설정
+                '-XX:+TieredCompilation',
+                '-XX:TieredStopAtLevel=4',
+                '-XX:ReservedCodeCacheSize=768m',
+                '-XX:InitialCodeCacheSize=192m',
+                '-XX:+OptimizeStringConcat',
+                '-XX:+UseStringDeduplication',
+                
+                // 메모리 안정성
+                '-XX:+UseCompressedOops',
+                '-XX:NativeMemoryTracking=summary',
+                
+                // 네트워킹
+                '-Dnetworkaddress.cache.ttl=60',
+                '-Djava.net.preferIPv4Stack=true',
+                
+                // 프로파일 식별
+                '-DperformanceProfile=quality'
+            ];
+            break;
+            
+        case 'battery':
+            // 🔋 배터리 절약 모드 - 전력 효율성 중심
+            profileArgs = [
+                // 절약형 GC 설정
+                '-XX:+UseG1GC', // G1GC도 전력 효율적
+                '-XX:+ParallelRefProcEnabled',
+                '-XX:MaxGCPauseMillis=300', // 더 긴 중단 시간으로 빈도 감소
+                '-XX:+UnlockExperimentalVMOptions',
+                '-XX:+DisableExplicitGC',
+                '-XX:G1NewSizePercent=15', // 작은 Young Generation
+                '-XX:G1ReservePercent=30',
+                '-XX:G1HeapRegionSize=8M', // 작은 힙 리전
+                '-XX:G1HeapWastePercent=15',
+                '-XX:G1MixedGCCountTarget=8', // 더 적은 Mixed GC
+                '-XX:InitiatingHeapOccupancyPercent=35', // 늦은 GC 시작
+                '-XX:G1MixedGCLiveThresholdPercent=75',
+                '-XX:SurvivorRatio=64', // 더 큰 Survivor 공간
+                '-XX:MaxTenuringThreshold=3',
+                
+                // 절약형 JIT 설정
+                '-XX:+TieredCompilation',
+                '-XX:TieredStopAtLevel=3', // 최고 레벨 컴파일 제한
+                '-XX:ReservedCodeCacheSize=256m', // 작은 코드 캐시
+                '-XX:InitialCodeCacheSize=64m',
+                
+                // 메모리 절약
+                '-XX:+UseCompressedOops',
+                '-XX:NativeMemoryTracking=off',
+                
+                // 네트워킹 절약
+                '-Dnetworkaddress.cache.ttl=300',
+                '-Djava.net.preferIPv4Stack=true',
+                
+                // 프로파일 식별
+                '-DperformanceProfile=battery'
+            ];
+            break;
+            
+        default: // 'balanced'
+            // ⚖️ 균형 모드 - 성능과 안정성의 균형
+            profileArgs = [
+                // 균형잡힌 G1GC 설정 (기본 Aikar's Flags 기반)
+                '-XX:+UseG1GC',
+                '-XX:+ParallelRefProcEnabled',
+                '-XX:MaxGCPauseMillis=130',
+                '-XX:+UnlockExperimentalVMOptions',
+                '-XX:+DisableExplicitGC',
+                '-XX:+AlwaysPreTouch',
+                '-XX:G1NewSizePercent=28',
+                '-XX:G1ReservePercent=20',
+                '-XX:G1HeapRegionSize=16M',
+                '-XX:G1HeapWastePercent=5',
+                '-XX:G1MixedGCCountTarget=3',
+                '-XX:InitiatingHeapOccupancyPercent=12',
+                '-XX:G1MixedGCLiveThresholdPercent=90',
+                '-XX:G1RSetUpdatingPauseTimePercent=5',
+                '-XX:SurvivorRatio=32',
+                '-XX:+PerfDisableSharedMem',
+                '-XX:MaxTenuringThreshold=1',
+                
+                // 균형잡힌 성능 최적화
+                '-XX:+UseFastUnorderedTimeStamps',
+                '-XX:+OptimizeStringConcat',
+                '-XX:+UseStringDeduplication',
+                '-XX:+TieredCompilation',
+                '-XX:TieredStopAtLevel=4',
+                '-XX:+UseCompressedOops',
+                
+                // 균형잡힌 메모리 설정
+                '-XX:+UseCodeCacheFlushing',
+                '-XX:ReservedCodeCacheSize=512m',
+                '-XX:InitialCodeCacheSize=128m',
+                '-XX:NativeMemoryTracking=off',
+                
+                // 스레드 설정
+                '-XX:+UseThreadPriorities',
+                '-XX:ThreadPriorityPolicy=1',
+                
+                // 네트워킹
+                '-Dnetworkaddress.cache.ttl=30',
+                '-Djava.net.preferIPv4Stack=true',
+                
+                // 프로파일 식별
+                '-DperformanceProfile=balanced'
+            ];
+            break;
+    }
+    
+    // GPU 최적화 옵션
+    let gpuArgs = [];
+    if (gpuOptimization) {
+        gpuArgs = [
+            // OpenGL 및 그래픽 최적화
+            '-Dsun.java2d.d3d=false',
+            '-Dsun.java2d.opengl=true',
+            '-Dsun.java2d.pmoffscreen=false',
+            '-Dsun.java2d.noddraw=true',
+            '-Dsun.java2d.ddscale=true',
+            
+            // LWJGL 최적화
+            '-Dorg.lwjgl.util.Debug=false',
+            '-Dorg.lwjgl.util.NoChecks=true',
+            
+            // GPU 식별
+            '-DgpuOptimization=enabled'
+        ];
+    }
+    
+    // 모드 호환성 옵션 (모든 프로파일에 공통)
+    const modArgs = [
+        '-Dfml.readTimeout=180',
+        '-Dfml.loginTimeout=180',
+        '-Dmixin.hotSwap=true',
+        '-Dmixin.checks.interfaces=true'
+    ];
+    
+    // 모든 옵션 결합
+    const finalArgs = [...baseArgs, ...profileArgs, ...gpuArgs, ...modArgs];
+    
+    console.log(`✅ 생성된 JVM 옵션 수: ${finalArgs.length}`);
+    return finalArgs;
+}
 
 // 최적의 Java 경로 찾기 (시스템 아키텍처 고려)
 async function findBestJavaPath() {
@@ -495,38 +717,24 @@ async function getAuthData() {
     }
 }
 
-// 레거시 Java 경로 찾기 (호환성을 위해 유지)
-async function findJavaPath() {
-    try {
-        return await findBestJavaPath();
-    } catch (error) {
-        // 설치된 Java 21 사용 (폴백)
-        const java21Path = "C:\\Program Files\\Java\\jdk-21\\bin\\java.exe";
-        if (await fs.pathExists(java21Path)) {
-            return java21Path;
-        }
-        
-        // 시스템 Java 사용
-        return 'java';
-    }
-}
 
 
-
+// 설치 관련 IPC 핸들러
 ipcMain.handle('check-install-status', async () => {
     try {
-        // 실제 설치 상태 확인 로직
-        // 현재는 시뮬레이션
+        const fabricInstalled = await checkFabricInstalled();
+        const modsCount = await getInstalledModsCount();
+        
         return {
             minecraft: true,
-            forge: true,
+            fabric: fabricInstalled,
             mods: []
         };
     } catch (error) {
         console.error('❌ 설치 상태 확인 오류:', error);
         return {
             minecraft: false,
-            forge: false,
+            fabric: false,
             mods: []
         };
     }
@@ -535,8 +743,6 @@ ipcMain.handle('check-install-status', async () => {
 ipcMain.handle('install-minecraft', async () => {
     try {
         console.log('📦 마인크래프트 설치 시작...');
-        
-        // 실제 설치 로직
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         return {
@@ -552,19 +758,40 @@ ipcMain.handle('install-minecraft', async () => {
     }
 });
 
-ipcMain.handle('install-forge', async () => {
+ipcMain.handle('install-fabric', async () => {
     try {
-        console.log('🔨 Forge 설치 시작...');
+        console.log('🧵 Fabric 설치 시작...');
         
-        // 실제 Forge 설치 로직
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const FabricInstaller = require('./fabric-installer.js');
+        const installer = new FabricInstaller();
+        
+        const modpackConfig = await installer.loadModpackConfig();
+        
+        const isInstalled = await installer.isFabricInstalled(
+            modpackConfig.minecraftVersion, 
+            modpackConfig.fabricVersion
+        );
+        
+        if (!isInstalled) {
+            console.log('🔧 Fabric 설치 실행 중...');
+            const result = await installer.installFabric(
+                modpackConfig.minecraftVersion,
+                modpackConfig.fabricVersion
+            );
+            
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+        } else {
+            console.log('✅ Fabric이 이미 설치되어 있습니다.');
+        }
         
         return {
             success: true,
-            message: 'Forge 설치 완료'
+            message: 'Fabric 설치 완료'
         };
     } catch (error) {
-        console.error('❌ Forge 설치 오류:', error);
+        console.error('❌ Fabric 설치 오류:', error);
         return {
             success: false,
             error: error.message
@@ -572,13 +799,79 @@ ipcMain.handle('install-forge', async () => {
     }
 });
 
-// 서버 상태 확인
+ipcMain.handle('install-modpack', async (event, options = {}) => {
+    try {
+        console.log('📦 모드팩 설치 시작...');
+        
+        const FabricInstaller = require('./fabric-installer.js');
+        const installer = new FabricInstaller();
+        
+        // 진행률 콜백 설정
+        const progressCallback = (progress) => {
+            console.log(`📊 ${progress.stage}: ${progress.message} (${progress.progress}%)`);
+            if (event.sender) {
+                event.sender.send('modpack-install-progress', progress);
+            }
+        };
+        
+        // 모드팩 설치 실행
+        const result = await installer.installModpack(progressCallback);
+        
+        if (result.success) {
+            console.log('✅ 모드팩 설치 완료!');
+            
+
+            
+            return {
+                success: true,
+                message: `모드팩 설치 완료! (${result.summary.success}/${result.summary.total}개 모드 설치됨)`,
+                summary: result.summary,
+                results: result.results
+            };
+        } else {
+            throw new Error(result.error);
+        }
+        
+    } catch (error) {
+        console.error('❌ 모드팩 설치 오류:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+});
+
+
+
+
+// 상태 확인 IPC 핸들러
+ipcMain.handle('check-modpack-updates', async () => {
+    try {
+        const fabricInstalled = await checkFabricInstalled();
+        const modsCount = await getInstalledModsCount();
+        
+        const needsUpdate = !fabricInstalled || modsCount < 5;
+        
+        return {
+            success: true,
+            needsUpdate: needsUpdate,
+            fabricInstalled: fabricInstalled,
+            modsCount: modsCount
+        };
+    } catch (error) {
+        return {
+            success: false,
+            needsUpdate: true,
+            error: error.message
+        };
+    }
+});
+
 ipcMain.handle('check-server-status', async (event, serverIP) => {
     try {
         console.log(`🌐 서버 상태 확인: ${serverIP}`);
         
-        // 실제 서버 상태 확인 로직
-        // 현재는 시뮬레이션
+        // 실제 서버 상태 확인 로직 (현재는 시뮬레이션)
         const isOnline = Math.random() > 0.3;
         
         if (isOnline) {
@@ -605,38 +898,7 @@ ipcMain.handle('check-server-status', async (event, serverIP) => {
     }
 });
 
-// 마인크래프트 디렉토리 찾기
-function getMinecraftDir() {
-    const platform = os.platform();
-    let mcDir;
-    
-    if (platform === 'win32') {
-        mcDir = path.join(os.homedir(), 'AppData', 'Roaming', '.minecraft');
-    } else if (platform === 'darwin') {
-        mcDir = path.join(os.homedir(), 'Library', 'Application Support', 'minecraft');
-    } else {
-        mcDir = path.join(os.homedir(), '.minecraft');
-    }
-    
-    return mcDir;
-}
-
-// 모드 디렉토리 찾기
-function getModsDir() {
-    return path.join(getMinecraftDir(), 'mods');
-}
-
-// 설정 파일 경로
-function getConfigPath() {
-    return path.join(__dirname, 'config.json');
-}
-
-// 인증 정보 파일 경로
-function getAuthPath() {
-    return path.join(__dirname, 'auth.json');
-}
-
-// 설정 저장
+// 설정 관리 IPC 핸들러
 ipcMain.handle('save-settings', async (event, settings) => {
     try {
         const configPath = getConfigPath();
@@ -648,7 +910,6 @@ ipcMain.handle('save-settings', async (event, settings) => {
     }
 });
 
-// 설정 로드
 ipcMain.handle('load-settings', async () => {
     try {
         const configPath = getConfigPath();
@@ -664,7 +925,7 @@ ipcMain.handle('load-settings', async () => {
                 memory: '2G',
                 autoConnect: false,
                 enableBgm: true,
-                authDuration: 14 // 기본값: 2주
+                authDuration: 14
             };
             await fs.writeJson(configPath, defaultSettings, { spaces: 2 });
             return defaultSettings;
@@ -682,62 +943,7 @@ ipcMain.handle('load-settings', async () => {
     }
 });
 
-// 모드팩 업데이트 확인
-ipcMain.handle('check-modpack-updates', async () => {
-    try {
-        // 간단한 업데이트 확인 로직
-        const fabricInstalled = await checkFabricInstalled();
-        const modsCount = await getInstalledModsCount();
-        
-        // Fabric이 없거나 모드가 5개 미만이면 업데이트 필요
-        const needsUpdate = !fabricInstalled || modsCount < 5;
-        
-        return {
-            success: true,
-            needsUpdate: needsUpdate,
-            fabricInstalled: fabricInstalled,
-            modsCount: modsCount
-        };
-    } catch (error) {
-        return {
-            success: false,
-            needsUpdate: true, // 오류 시 업데이트 필요로 가정
-            error: error.message
-        };
-    }
-});
-
-// Fabric 설치 상태 확인
-async function checkFabricInstalled() {
-    try {
-        const versionsDir = path.join(getMinecraftDir(), 'versions');
-        if (!await fs.pathExists(versionsDir)) {
-            return false;
-        }
-        
-        const versions = await fs.readdir(versionsDir);
-        return versions.some(version => version.includes('fabric'));
-    } catch (error) {
-        return false;
-    }
-}
-
-// 설치된 모드 개수 확인
-async function getInstalledModsCount() {
-    try {
-        const modsDir = getModsDir();
-        if (!await fs.pathExists(modsDir)) {
-            return 0;
-        }
-        
-        const files = await fs.readdir(modsDir);
-        return files.filter(file => file.endsWith('.jar')).length;
-    } catch (error) {
-        return 0;
-    }
-}
-
-// 모드 제거
+// 모드 관리 IPC 핸들러
 ipcMain.handle('remove-mod', async (event, filename) => {
     try {
         const modPath = path.join(getModsDir(), filename);
@@ -762,7 +968,6 @@ ipcMain.handle('remove-mod', async (event, filename) => {
     }
 });
 
-// 모드 검색 (시뮬레이션)
 ipcMain.handle('search-mods', async (event, query) => {
     try {
         // 실제로는 CurseForge API 또는 Modrinth API 사용
@@ -792,7 +997,86 @@ ipcMain.handle('search-mods', async (event, query) => {
     }
 });
 
-// 프로세스 종료 시 정리
+// 유틸리티 함수들
+
+// 마인크래프트 디렉토리 경로
+function getMinecraftDir() {
+    const platform = os.platform();
+    if (platform === 'win32') {
+        return path.join(os.homedir(), 'AppData', 'Roaming', '.minecraft');
+    } else if (platform === 'darwin') {
+        return path.join(os.homedir(), 'Library', 'Application Support', 'minecraft');
+    } else {
+        return path.join(os.homedir(), '.minecraft');
+    }
+}
+
+// 모드 디렉토리 경로
+function getModsDir() {
+    return path.join(getMinecraftDir(), 'mods');
+}
+
+// 설정 파일 경로
+function getConfigPath() {
+    return path.join(__dirname, 'config.json');
+}
+
+// 인증 정보 파일 경로
+function getAuthPath() {
+    return path.join(__dirname, 'auth.json');
+}
+
+
+
+
+
+// Fabric 설치 상태 확인
+async function checkFabricInstalled() {
+    try {
+        const versionsDir = path.join(getMinecraftDir(), 'versions');
+        if (!await fs.pathExists(versionsDir)) {
+            console.log('🔍 버전 디렉토리가 존재하지 않음:', versionsDir);
+            return false;
+        }
+        
+        const versions = await fs.readdir(versionsDir);
+        console.log('🔍 설치된 버전들:', versions);
+        
+        try {
+            const modpackConfig = await fs.readJson(path.join(__dirname, 'modpack-config.json'));
+            const expectedVersion = `fabric-loader-${modpackConfig.fabricVersion}-${modpackConfig.minecraftVersion}`;
+            const fabricInstalled = versions.includes(expectedVersion);
+            
+            console.log(`🔍 예상 Fabric 버전: ${expectedVersion}`);
+            console.log(`🔍 Fabric 설치 상태: ${fabricInstalled ? '✅ 설치됨' : '❌ 미설치'}`);
+            
+            return fabricInstalled;
+        } catch (configError) {
+            console.warn('⚠️ 모드팩 설정 로드 실패, 일반 Fabric 검사 수행');
+            return versions.some(version => version.includes('fabric'));
+        }
+    } catch (error) {
+        console.error('❌ Fabric 설치 상태 확인 실패:', error);
+        return false;
+    }
+}
+
+// 설치된 모드 개수 확인
+async function getInstalledModsCount() {
+    try {
+        const modsDir = getModsDir();
+        if (!await fs.pathExists(modsDir)) {
+            return 0;
+        }
+        
+        const files = await fs.readdir(modsDir);
+        return files.filter(file => file.endsWith('.jar')).length;
+    } catch (error) {
+        return 0;
+    }
+}
+
+// 프로세스 종료 처리
 process.on('exit', () => {
     safeLog('Application exiting...');
 });
@@ -810,10 +1094,8 @@ process.on('SIGTERM', () => {
 // 처리되지 않은 예외 처리
 process.on('uncaughtException', (error) => {
     safeLog('Uncaught Exception: ' + error.message);
-    // 앱을 종료하지 않고 계속 실행
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     safeLog('Unhandled Rejection at: ' + promise + ' reason: ' + reason);
-    // 앱을 종료하지 않고 계속 실행
 }); 

@@ -1,7 +1,9 @@
 {
   "serverIP": "localhost:25565",
   "username": "123",
-  "memory": "2G",
+  "memory": "4G",
   "autoConnect": false,
-  "enableBgm": true
+  "enableBgm": true,
+  "gpuOptimization": true,
+  "performanceMode": "high"
 }

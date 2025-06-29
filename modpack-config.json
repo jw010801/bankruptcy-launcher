@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "minecraftVersion": "1.20.1",
   "modLoader": "fabric",
-  "fabricVersion": "0.14.22",
+  "fabricVersion": "0.16.14",
   "description": "성능 최적화 및 편의성 모드가 포함된 파산게임 전용 모드팩",
   "mods": [
     {
       "name": "Sodium",
       "description": "렌더링 성능 최적화",
       "required": true,
-      "downloadUrl": "https://cdn.modrinth.com/data/AANobbMI/versions/rAfhHfow/sodium-fabric-mc1.20.1-0.5.2.jar",
-      "fileName": "sodium-fabric-mc1.20.1-0.5.2.jar",
+      "downloadUrl": "https://cdn.modrinth.com/data/AANobbMI/versions/ygf8cVZg/sodium-fabric-0.5.11+mc1.20.1.jar",
+      "fileName": "sodium-fabric-0.5.11+mc1.20.1.jar",
       "modId": "sodium"
     },
     {
@@ -22,29 +22,72 @@
       "fileName": "lithium-fabric-mc1.20.1-0.11.2.jar",
       "modId": "lithium"
     },
-    {
-      "name": "JourneyMap",
-      "description": "실시간 미니맵 및 월드맵",
-      "required": true,
-      "downloadUrl": "https://cdn.modrinth.com/data/lfHFW1FD/versions/hVJqyNLB/journeymap-1.20.1-5.9.7-fabric.jar",
-      "fileName": "journeymap-1.20.1-5.9.7-fabric.jar",
-      "modId": "journeymap"
-    },
+
     {
       "name": "Fabric API",
       "description": "Fabric 모드 로더 필수 API",
       "required": true,
-      "downloadUrl": "https://cdn.modrinth.com/data/P7dR8mSH/versions/P7uGFii0/fabric-api-0.87.0+1.20.1.jar",
-      "fileName": "fabric-api-0.87.0+1.20.1.jar",
+      "downloadUrl": "https://cdn.modrinth.com/data/P7dR8mSH/versions/XheZ9iGK/fabric-api-0.86.1+1.20.1.jar",
+      "fileName": "fabric-api-0.86.1+1.20.1.jar",
       "modId": "fabric-api"
     },
     {
       "name": "ModMenu",
       "description": "모드 설정 메뉴",
       "required": false,
-      "downloadUrl": "https://cdn.modrinth.com/data/mOgUt4GM/versions/V4hnfgRO/modmenu-7.2.2.jar",
+      "downloadUrl": "https://cdn.modrinth.com/data/mOgUt4GM/versions/lEkperf6/modmenu-7.2.2.jar",
       "fileName": "modmenu-7.2.2.jar",
       "modId": "modmenu"
+    },
+    {
+      "name": "Cloth Config API",
+      "description": "설정 API (의존성 모드)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/9s6osm5g/versions/J3FLptsi/cloth-config-11.1.118-fabric.jar",
+      "fileName": "cloth-config-11.1.118-fabric.jar",
+      "modId": "cloth-config"
+    },
+    {
+      "name": "FerriteCore",
+      "description": "메모리 사용량 최적화 (RAM 사용량 40% 감소)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/uXXizFIs/versions/unerR5MN/ferritecore-6.0.1-fabric.jar",
+      "fileName": "ferritecore-6.0.1-fabric.jar",
+      "modId": "ferritecore"
+    },
+    {
+      "name": "Starlight",
+      "description": "조명 엔진 최적화 (CPU 스파이크 대폭 감소)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/H8CaAYZC/versions/XGIsoVGT/starlight-1.1.2+fabric.dbc156f.jar",
+      "fileName": "starlight-1.1.2+fabric.dbc156f.jar",
+      "modId": "starlight"
+    },
+    {
+      "name": "Entity Culling",
+      "description": "보이지 않는 엔티티 렌더링 제거 (CPU 부하 감소)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/NNAgCjsB/versions/mahLIqpj/entityculling-fabric-1.6.7-mc1.20.1.jar",
+      "fileName": "entityculling-fabric-1.6.7-mc1.20.1.jar",
+      "modId": "entityculling"
+    },
+
+    {
+      "name": "Dynamic FPS",
+      "description": "백그라운드에서 FPS 자동 조절 (배터리 절약)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/LQ3K71Q1/versions/PkIdKJRa/dynamic-fps-3.8.0+minecraft-1.20.0-fabric.jar",
+      "fileName": "dynamic-fps-3.8.0+minecraft-1.20.0-fabric.jar",
+      "modId": "dynamic-fps"
+    },
+    {
+      "name": "Iris Shaders",
+      "description": "쉐이더 지원 (OptiFine 호환) - 안정적인 1.7.5 버전",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/YL57xq9U/versions/Bi9nvICq/iris-1.7.5+mc1.20.1.jar",
+      "fileName": "iris-1.7.5+mc1.20.1.jar",
+      "modId": "iris",
+      "note": "한글 폰트 문제가 있을 경우 비활성화하세요"
     }
   ],
   "serverInfo": {
