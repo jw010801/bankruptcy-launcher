@@ -1,9 +1,18 @@
 {
   "serverIP": "localhost:25565",
   "username": "123",
-  "memory": "4G",
+  "memory": "8G",
   "autoConnect": false,
+  "launcherAction": "close",
   "enableBgm": true,
-  "gpuOptimization": true,
-  "performanceMode": "high"
+  "authDuration": 14,
+  "masterVolume": 0.7,
+  "bgmVolume": 0.5,
+  "sfxVolume": 0.8,
+  "enableSfx": true,
+  "autoUpdate": true,
+  "debugMode": false,
+  "keepLogins": true,
+  "performanceProfile": "balanced",
+  "gpuOptimization": true
 }

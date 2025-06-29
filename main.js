@@ -230,6 +230,11 @@ ipcMain.handle('launch-minecraft', async (event, launchData) => {
             const memory = launchData.memory || '4G';
             const memoryValue = parseInt(memory.replace('G', ''));
             
+            console.log('🔍 === 메인 프로세스에서 설정 확인 ===');
+            console.log('🧠 받은 메모리 설정:', launchData.memory);
+            console.log('🧠 최종 메모리 값:', memory);
+            console.log('🧠 메모리 숫자값:', memoryValue);
+            
             // 성능 프로파일 설정
             const performanceProfile = launchData.performanceProfile || 'balanced';
             const gpuOptimization = launchData.gpuOptimization !== false;
@@ -922,10 +927,20 @@ ipcMain.handle('load-settings', async () => {
             const defaultSettings = {
                 serverIP: 'localhost:25565',
                 username: 'Player',
-                memory: '2G',
+                memory: '4G',
                 autoConnect: false,
                 enableBgm: true,
-                authDuration: 14
+                authDuration: 14,
+                launcherAction: 'close',
+                performanceProfile: 'balanced',
+                gpuOptimization: true,
+                masterVolume: 0.7,
+                bgmVolume: 0.5,
+                sfxVolume: 0.8,
+                enableSfx: true,
+                autoUpdate: true,
+                debugMode: false,
+                keepLogins: true
             };
             await fs.writeJson(configPath, defaultSettings, { spaces: 2 });
             return defaultSettings;
@@ -935,10 +950,20 @@ ipcMain.handle('load-settings', async () => {
         return {
             serverIP: 'localhost:25565',
             username: 'Player',
-            memory: '2G',
+            memory: '4G',
             autoConnect: false,
             enableBgm: true,
-            authDuration: 14
+            authDuration: 14,
+            launcherAction: 'close',
+            performanceProfile: 'balanced',
+            gpuOptimization: true,
+            masterVolume: 0.7,
+            bgmVolume: 0.5,
+            sfxVolume: 0.8,
+            enableSfx: true,
+            autoUpdate: true,
+            debugMode: false,
+            keepLogins: true
         };
     }
 });

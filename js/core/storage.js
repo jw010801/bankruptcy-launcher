@@ -124,7 +124,7 @@
             return {
                 serverIP: 'localhost:25565',
                 username: '',
-                memory: '2G',
+                memory: '4G', // 기본 메모리를 4GB로 변경
                 autoConnect: false,
                 enableBgm: true,
                 enableSfx: true,
@@ -135,7 +135,10 @@
                 autoUpdate: true,
                 debugMode: false,
                 keepLogins: true,
-                launcherAction: 'close' // 게임 시작 후 런처 동작 기본값 (리소스 절약)
+                launcherAction: 'close', // 게임 시작 후 런처 동작 기본값 (리소스 절약)
+                // 새로 추가된 성능 설정들
+                performanceProfile: 'balanced',
+                gpuOptimization: true
             };
         }
 

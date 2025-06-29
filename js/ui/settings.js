@@ -58,6 +58,10 @@
             this.keepLoginsCheck = document.getElementById('keep-logins');
             this.authDurationSelect = document.getElementById('auth-duration');
             
+            // 새로 추가된 성능 설정 요소들
+            this.performanceProfileSelect = document.getElementById('performance-profile');
+            this.gpuOptimizationCheck = document.getElementById('gpu-optimization');
+            
             // 볼륨 표시 요소들
             this.masterVolumeValue = document.getElementById('master-volume-value');
             this.bgmVolumeValue = document.getElementById('bgm-volume-value');
@@ -199,14 +203,36 @@
          */
         async loadSettings() {
             try {
-                if (window.storageManager) {
-                    this.currentSettings = await window.storageManager.loadConfig();
-                } else {
-                    // 기본 설정
-                    this.currentSettings = this.getDefaultSettings();
+                let settings = null;
+                
+                // 1. config.json에서 로드 시도 (우선순위)
+                try {
+                    if (window.electronAPI) {
+                        settings = await window.electronAPI.invoke('load-settings');
+                        console.log('📋 config.json에서 설정 로드:', settings);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ config.json 로드 실패:', error);
                 }
                 
-                console.log('📋 설정 로드 완료:', this.currentSettings);
+                // 2. config.json 실패 시 localStorage 사용
+                if (!settings && window.storageManager) {
+                    try {
+                        settings = await window.storageManager.loadConfig();
+                        console.log('📋 localStorage에서 설정 로드:', settings);
+                    } catch (error) {
+                        console.warn('⚠️ localStorage 로드 실패:', error);
+                    }
+                }
+                
+                // 3. 모든 방법 실패 시 기본 설정
+                if (!settings) {
+                    settings = this.getDefaultSettings();
+                    console.log('📋 기본 설정 사용:', settings);
+                }
+                
+                this.currentSettings = settings;
+                console.log('📋 최종 로드된 설정:', this.currentSettings);
                 
             } catch (error) {
                 console.error('❌ 설정 로드 실패:', error);
@@ -221,7 +247,7 @@
             return {
                 serverIP: 'localhost:25565',
                 username: '',
-                memory: '2G',
+                memory: '4G', // 기본 메모리를 4GB로 변경
                 autoConnect: false,
                 launcherAction: 'minimize', // 게임 시작 후 런처 동작 (minimize/keep/close)
                 enableBgm: true,
@@ -232,7 +258,10 @@
                 enableSfx: true,
                 autoUpdate: true,
                 debugMode: false,
-                keepLogins: true
+                keepLogins: true,
+                // 새로 추가된 성능 설정들
+                performanceProfile: 'balanced',
+                gpuOptimization: true
             };
         }
 
@@ -244,9 +273,20 @@
                 // 게임 설정
                 if (this.serverIpInput) this.serverIpInput.value = this.currentSettings.serverIP || 'localhost:25565';
                 if (this.usernameInput) this.usernameInput.value = this.currentSettings.username || '';
-                if (this.memorySelect) this.memorySelect.value = this.currentSettings.memory || '2G';
+                if (this.memorySelect) {
+                    this.memorySelect.value = this.currentSettings.memory || '4G';
+                    console.log('🧠 설정 폼에 메모리 로드:', {
+                        currentSetting: this.currentSettings.memory,
+                        setValue: this.memorySelect.value,
+                        element: !!this.memorySelect
+                    });
+                }
                 if (this.autoConnectCheck) this.autoConnectCheck.checked = this.currentSettings.autoConnect || false;
                 if (this.launcherActionSelect) this.launcherActionSelect.value = this.currentSettings.launcherAction || 'minimize';
+                
+                // 성능 설정
+                if (this.performanceProfileSelect) this.performanceProfileSelect.value = this.currentSettings.performanceProfile || 'balanced';
+                if (this.gpuOptimizationCheck) this.gpuOptimizationCheck.checked = this.currentSettings.gpuOptimization !== false;
                 
                 // 오디오 설정
                 if (this.masterVolumeSlider) {
@@ -291,7 +331,7 @@
                 const newSettings = {
                     serverIP: this.serverIpInput?.value || 'localhost:25565',
                     username: this.usernameInput?.value || '',
-                    memory: this.memorySelect?.value || '2G',
+                    memory: this.memorySelect?.value || '4G',
                     autoConnect: this.autoConnectCheck?.checked || false,
                     launcherAction: this.launcherActionSelect?.value || 'minimize',
                     enableBgm: this.enableBgmCheck?.checked !== false,
@@ -302,12 +342,50 @@
                     enableSfx: this.enableSfxCheck?.checked !== false,
                     autoUpdate: this.autoUpdateCheck?.checked !== false,
                     debugMode: this.debugModeCheck?.checked || false,
-                    keepLogins: this.keepLoginsCheck?.checked !== false
+                    keepLogins: this.keepLoginsCheck?.checked !== false,
+                    // 새로 추가된 성능 설정들
+                    performanceProfile: this.performanceProfileSelect?.value || 'balanced',
+                    gpuOptimization: this.gpuOptimizationCheck?.checked !== false
                 };
                 
-                // 설정 저장
-                if (window.storageManager) {
-                    await window.storageManager.saveConfig(newSettings);
+                console.log('💾 저장할 설정:', newSettings);
+                console.log('🧠 메모리 설정 확인:', {
+                    element: !!this.memorySelect,
+                    value: this.memorySelect?.value,
+                    savedValue: newSettings.memory
+                });
+                
+                // 설정 저장 - config.json과 localStorage 둘 다 업데이트
+                let saveSuccess = false;
+                
+                // 1. config.json에 저장 (우선순위)
+                try {
+                    if (window.electronAPI) {
+                        const result = await window.electronAPI.invoke('save-settings', newSettings);
+                        if (result.success) {
+                            console.log('✅ config.json 저장 성공');
+                            saveSuccess = true;
+                        } else {
+                            console.error('❌ config.json 저장 실패:', result.error);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ config.json 저장 오류:', error);
+                }
+                
+                // 2. localStorage에도 백업 저장
+                try {
+                    if (window.storageManager) {
+                        await window.storageManager.saveConfig(newSettings);
+                        console.log('✅ localStorage 백업 저장 성공');
+                        if (!saveSuccess) saveSuccess = true; // config.json 실패 시 fallback
+                    }
+                } catch (error) {
+                    console.error('❌ localStorage 저장 오류:', error);
+                }
+                
+                if (!saveSuccess) {
+                    throw new Error('모든 저장 방법이 실패했습니다');
                 }
                 
                 // 현재 설정 업데이트

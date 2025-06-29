@@ -361,16 +361,30 @@
                 if (this.ipcRenderer) {
                     console.log('🚀 IPC로 launch-minecraft 호출...');
                     
+                    // 설정값들을 개별로 확인
+                    const serverIP = this.getServerIP();
+                    const memory = await this.getMemoryAllocation(); // async 함수이므로 await 사용
+                    const autoConnect = this.getAutoConnect();
+                    const performanceProfile = this.getPerformanceProfile();
+                    const gpuOptimization = this.getGpuOptimization();
+                    
+                    console.log('🔍 === 게임 실행 설정 확인 ===');
+                    console.log('🌐 서버 IP:', serverIP);
+                    console.log('🧠 메모리 할당:', memory);
+                    console.log('🔌 자동 접속:', autoConnect);
+                    console.log('🎯 성능 프로파일:', performanceProfile);
+                    console.log('🎮 GPU 최적화:', gpuOptimization);
+                    
                     const launchData = {
                         authData: authData,
-                        serverIP: this.getServerIP(),
-                        memory: this.getMemoryAllocation(),
-                        autoConnect: this.getAutoConnect(),
-                        performanceProfile: this.getPerformanceProfile(),
-                        gpuOptimization: this.getGpuOptimization()
+                        serverIP: serverIP,
+                        memory: memory,
+                        autoConnect: autoConnect,
+                        performanceProfile: performanceProfile,
+                        gpuOptimization: gpuOptimization
                     };
                     
-                    console.log('📋 Launch 데이터:', launchData);
+                    console.log('📋 최종 Launch 데이터:', launchData);
                     
                     const result = await this.ipcRenderer.invoke('launch-minecraft', launchData);
                     
@@ -403,9 +417,41 @@
         /**
          * 메모리 할당량 가져오기
          */
-        getMemoryAllocation() {
+        async getMemoryAllocation() {
+            // 1. DOM 요소에서 현재 값 시도
             const memorySelect = document.getElementById('memory-allocation');
-            return memorySelect ? memorySelect.value || '2G' : '2G';
+            let memory = null;
+            
+            if (memorySelect && memorySelect.value) {
+                memory = memorySelect.value;
+                console.log('🧠 DOM에서 메모리 로드:', memory);
+            } else {
+                console.log('🧠 DOM 요소 없음, 저장된 설정에서 로드 시도...');
+                
+                // 2. IPC를 통해 config.json에서 로드 시도
+                try {
+                    if (this.ipcRenderer) {
+                        const config = await this.ipcRenderer.invoke('load-settings');
+                        memory = config.memory || '4G';
+                        console.log('🧠 config.json에서 메모리 로드:', memory);
+                    } else if (window.storageManager) {
+                        const config = await window.storageManager.loadConfig();
+                        memory = config.memory || '4G';
+                        console.log('🧠 localStorage에서 메모리 로드:', memory);
+                    }
+                } catch (error) {
+                    console.warn('🧠 설정 로드 실패:', error);
+                }
+                
+                // 3. 모든 방법 실패시 기본값
+                if (!memory) {
+                    memory = '4G';
+                    console.log('🧠 기본값 사용:', memory);
+                }
+            }
+            
+            console.log('🧠 최종 메모리 할당량:', memory);
+            return memory;
         }
 
         /**
