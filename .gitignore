@@ -1,2 +1,18 @@
 node_modules
 package-lock.json
+
+# 🔒 민감한 인증 정보 파일들 (절대 공개 금지)
+auth.json
+*.auth
+*.token
+*.key
+
+# 🔐 사용자별 설정 파일들
+profiles/*/config.json
+user-settings.json
+
+# 📁 임시 파일들
+*.tmp
+*.log
+temp/
+logs/
