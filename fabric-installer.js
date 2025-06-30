@@ -21,9 +21,11 @@ class FabricInstaller {
         
         this.modsDir = path.join(this.minecraftDir, 'mods');
         this.versionsDir = path.join(this.minecraftDir, 'versions');
+        this.resourcepacksDir = path.join(this.minecraftDir, 'resourcepacks');
         
         console.log(`📁 마인크래프트 디렉토리: ${this.minecraftDir}`);
         console.log(`📦 모드 디렉토리: ${this.modsDir}`);
+        console.log(`🎨 리소스팩 디렉토리: ${this.resourcepacksDir}`);
     }
 
     /**
@@ -200,6 +202,66 @@ class FabricInstaller {
     }
 
     /**
+     * 리소스팩 다운로드
+     */
+    async downloadResourcepack(resourcepack) {
+        try {
+            console.log(`🎨 리소스팩 다운로드 중: ${resourcepack.name}`);
+            
+            const resourcepackPath = path.join(this.resourcepacksDir, resourcepack.fileName);
+            
+            // 이미 존재하는 경우 스킵
+            if (await fs.pathExists(resourcepackPath)) {
+                console.log(`⏭️ 리소스팩 이미 존재: ${resourcepack.name}`);
+                return {
+                    success: true,
+                    message: `리소스팩 이미 존재: ${resourcepack.name}`,
+                    skipped: true
+                };
+            }
+            
+            // 리소스팩 디렉토리 생성
+            await fs.ensureDir(this.resourcepacksDir);
+            
+            // 리소스팩 다운로드
+            const response = await axios({
+                method: 'GET',
+                url: resourcepack.downloadUrl,
+                responseType: 'stream',
+                timeout: 30000 // 30초 타임아웃
+            });
+            
+            const writer = fs.createWriteStream(resourcepackPath);
+            response.data.pipe(writer);
+            
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => {
+                    console.log(`✅ 리소스팩 다운로드 완료: ${resourcepack.name}`);
+                    resolve({
+                        success: true,
+                        message: `리소스팩 다운로드 완료: ${resourcepack.name}`,
+                        filePath: resourcepackPath
+                    });
+                });
+                
+                writer.on('error', (error) => {
+                    console.error(`❌ 리소스팩 다운로드 실패: ${resourcepack.name}`, error);
+                    reject({
+                        success: false,
+                        error: `리소스팩 다운로드 실패: ${resourcepack.name} - ${error.message}`
+                    });
+                });
+            });
+            
+        } catch (error) {
+            return {
+                success: false,
+                error: `리소스팩 다운로드 실패: ${resourcepack.name} - ${error.message}`
+            };
+        }
+    }
+
+    /**
      * 전체 모드팩 설치
      */
     async installModpack(progressCallback = null) {
@@ -208,6 +270,7 @@ class FabricInstaller {
             const results = {
                 fabricInstalled: false,
                 modsInstalled: [],
+                resourcepacksInstalled: [],
                 errors: []
             };
             
@@ -281,8 +344,53 @@ class FabricInstaller {
                     console.error(`모드 설치 오류: ${mod.name}`, error);
                     results.errors.push(`${mod.name}: ${error.message}`);
                 }
+                        }
+
+            // 3. 리소스팩 설치 (옵션)
+            if (config.resourcepacks && config.resourcepacks.length > 0) {
+                if (progressCallback) {
+                    progressCallback({
+                        stage: 'resourcepacks',
+                        message: '리소스팩 다운로드 시작...',
+                        progress: 90
+                    });
+                }
+                
+                const totalResourcepacks = config.resourcepacks.length;
+                let resourcepackInstalledCount = 0;
+                
+                for (const resourcepack of config.resourcepacks) {
+                    try {
+                        if (progressCallback) {
+                            progressCallback({
+                                stage: 'resourcepacks',
+                                message: `${resourcepack.name} 다운로드 중...`,
+                                progress: 90 + (resourcepackInstalledCount / totalResourcepacks) * 8
+                            });
+                        }
+                        
+                        const resourcepackResult = await this.downloadResourcepack(resourcepack);
+                        results.resourcepacksInstalled.push({
+                            name: resourcepack.name,
+                            success: resourcepackResult.success,
+                            skipped: resourcepackResult.skipped || false,
+                            message: resourcepackResult.message
+                        });
+                        
+                        resourcepackInstalledCount++;
+                        
+                        // 다운로드 간격 (서버 부하 방지)
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                    } catch (error) {
+                        console.error(`리소스팩 설치 오류: ${resourcepack.name}`, error);
+                        results.errors.push(`${resourcepack.name}: ${error.message}`);
+                    }
+                }
+                
+                console.log(`🎨 리소스팩 설치 완료: ${resourcepackInstalledCount}개`);
             }
-            
+
             if (progressCallback) {
                 progressCallback({
                     stage: 'complete',
@@ -292,23 +400,34 @@ class FabricInstaller {
             }
             
             // 결과 요약
-            const successCount = results.modsInstalled.filter(m => m.success).length;
-            const skippedCount = results.modsInstalled.filter(m => m.skipped).length;
-            const failedCount = results.modsInstalled.length - successCount;
+            const modsSuccessCount = results.modsInstalled.filter(m => m.success).length;
+            const modsSkippedCount = results.modsInstalled.filter(m => m.skipped).length;
+            const modsFailedCount = results.modsInstalled.length - modsSuccessCount;
+            
+            const resourcepacksSuccessCount = results.resourcepacksInstalled.filter(r => r.success).length;
+            const resourcepacksSkippedCount = results.resourcepacksInstalled.filter(r => r.skipped).length;
+            const resourcepacksFailedCount = results.resourcepacksInstalled.length - resourcepacksSuccessCount;
             
             console.log(`📊 모드팩 설치 완료:`);
-            console.log(`   ✅ 성공: ${successCount}개`);
-            console.log(`   ⏭️ 스킵: ${skippedCount}개`);
-            console.log(`   ❌ 실패: ${failedCount}개`);
+            console.log(`   📦 모드 - 성공: ${modsSuccessCount}개, 스킵: ${modsSkippedCount}개, 실패: ${modsFailedCount}개`);
+            console.log(`   🎨 리소스팩 - 성공: ${resourcepacksSuccessCount}개, 스킵: ${resourcepacksSkippedCount}개, 실패: ${resourcepacksFailedCount}개`);
             
             return {
                 success: true,
                 results: results,
                 summary: {
-                    total: totalMods,
-                    success: successCount,
-                    skipped: skippedCount,
-                    failed: failedCount
+                    mods: {
+                        total: totalMods,
+                        success: modsSuccessCount,
+                        skipped: modsSkippedCount,
+                        failed: modsFailedCount
+                    },
+                    resourcepacks: {
+                        total: config.resourcepacks ? config.resourcepacks.length : 0,
+                        success: resourcepacksSuccessCount,
+                        skipped: resourcepacksSkippedCount,
+                        failed: resourcepacksFailedCount
+                    }
                 },
                 config: config
             };

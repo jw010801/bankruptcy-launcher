@@ -496,6 +496,19 @@ class MinecraftAuth {
             
             console.log('✅ 플레이어 프로필 획득 완료');
 
+            // 📝 인증 정보 저장 (중요!)
+            const authDataToSave = {
+                accessToken: mcResult.accessToken,
+                refreshToken: msResult.refreshToken || null, // Refresh Token 저장
+                profile: profileResult.profile,
+                account: msResult.account,
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24시간 후 만료
+                savedAt: new Date().toISOString()
+            };
+            
+            await this.saveAuth(authDataToSave);
+            console.log('✅ 인증 정보 저장 완료');
+
             return {
                 success: true,
                 data: {
@@ -532,34 +545,68 @@ class MinecraftAuth {
     }
 
     /**
-     * 저장된 인증 정보 로드
+     * Refresh Token을 사용한 토큰 갱신
      */
-    async loadSavedAuth() {
+    async refreshToken() {
         try {
-            const authExists = await this.checkAuthFileExists();
-            if (!authExists) {
-                return null;
-            }
-
-            const authData = await fs.readFile(this.authFilePath, 'utf8');
-            const parsedAuth = JSON.parse(authData);
+            console.log('🔄 Refresh Token으로 토큰 갱신 시도...');
             
-            if (this.isAuthValid(parsedAuth)) {
-                this.authData = parsedAuth;
-                return parsedAuth;
-            } else {
-                // 만료된 인증 정보 삭제
-                await this.clearAuth();
-                return null;
+            if (!this.authData || !this.authData.refreshToken) {
+                console.log('❌ Refresh Token이 없음, 재인증 필요');
+                return { success: false, error: 'No refresh token available' };
             }
+            
+            const silentRequest = {
+                scopes: ['XboxLive.signin', 'offline_access'],
+                refreshToken: this.authData.refreshToken,
+                account: this.currentAccount
+            };
+            
+            const response = await this.pca.acquireTokenSilent(silentRequest);
+            
+            if (response.accessToken) {
+                console.log('✅ 토큰 갱신 성공');
+                
+                // 새로운 토큰으로 Minecraft 인증 진행
+                const xblResult = await this.authenticateWithXboxLive(response.accessToken);
+                if (!xblResult.success) {
+                    throw new Error(`Xbox Live 인증 실패: ${xblResult.error}`);
+                }
+                
+                const xstsResult = await this.getXSTSToken(xblResult.token);
+                if (!xstsResult.success) {
+                    throw new Error(`XSTS Token 획득 실패: ${xstsResult.error}`);
+                }
+                
+                const mcResult = await this.authenticateWithMinecraft(xstsResult.token, xstsResult.userHash);
+                if (!mcResult.success) {
+                    throw new Error(`Minecraft 인증 실패: ${mcResult.error}`);
+                }
+                
+                // 갱신된 인증 정보 저장
+                const updatedAuthData = {
+                    ...this.authData,
+                    accessToken: mcResult.accessToken,
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24시간 후
+                    refreshToken: response.refreshToken || this.authData.refreshToken
+                };
+                
+                await this.saveAuth(updatedAuthData);
+                
+                return {
+                    success: true,
+                    accessToken: mcResult.accessToken
+                };
+            }
+            
         } catch (error) {
-            console.error('❌ 저장된 인증 정보 로드 실패:', error);
-            return null;
+            console.error('❌ 토큰 갱신 실패:', error.message);
+            return { success: false, error: error.message };
         }
     }
 
     /**
-     * 인증 정보 유효성 확인
+     * 인증 정보 유효성 확인 (개선된 버전)
      */
     isAuthValid(authData) {
         if (!authData || !authData.expiresAt) {
@@ -568,8 +615,49 @@ class MinecraftAuth {
         
         const expiresAt = new Date(authData.expiresAt);
         const now = new Date();
+        const timeUntilExpiry = expiresAt.getTime() - now.getTime();
         
-        return expiresAt > now;
+        // 1시간 이내 만료 예정이면 갱신 필요로 판단
+        const oneHour = 60 * 60 * 1000;
+        return timeUntilExpiry > oneHour;
+    }
+
+    /**
+     * 저장된 인증 정보 로드 (개선된 버전)
+     */
+    async loadSavedAuth() {
+        try {
+            const authExists = await this.checkAuthFileExists();
+            if (!authExists) {
+                console.log('📝 저장된 인증 파일이 없음');
+                return null;
+            }
+
+            const authData = await fs.readFile(this.authFilePath, 'utf8');
+            const parsedAuth = JSON.parse(authData);
+            
+            if (this.isAuthValid(parsedAuth)) {
+                console.log('✅ 저장된 인증 정보가 유효함');
+                this.authData = parsedAuth;
+                return parsedAuth;
+            } else {
+                console.log('⚠️ 저장된 토큰이 만료됨, 갱신 시도...');
+                
+                // 토큰 갱신 시도
+                const refreshResult = await this.refreshToken();
+                if (refreshResult.success) {
+                    console.log('✅ 토큰 갱신 성공');
+                    return this.authData;
+                } else {
+                    console.log('❌ 토큰 갱신 실패, 재인증 필요');
+                    await this.clearAuth();
+                    return null;
+                }
+            }
+        } catch (error) {
+            console.error('❌ 저장된 인증 정보 로드 실패:', error);
+            return null;
+        }
     }
 
     /**

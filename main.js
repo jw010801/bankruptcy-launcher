@@ -227,7 +227,7 @@ ipcMain.handle('launch-minecraft', async (event, launchData) => {
             const authData = launchData.authData || await getAuthData();
             
             // 메모리 설정
-            const memory = launchData.memory || '4G';
+            const memory = launchData.memory || '8G'; // 기본값 8GB로 상향
             const memoryValue = parseInt(memory.replace('G', ''));
             
             console.log('🔍 === 메인 프로세스에서 설정 확인 ===');
@@ -827,9 +827,18 @@ ipcMain.handle('install-modpack', async (event, options = {}) => {
             
 
             
+            const modsSummary = result.summary.mods;
+            const resourcepacksSummary = result.summary.resourcepacks;
+            
+            let message = `모드팩 설치 완료! (모드: ${modsSummary.success}/${modsSummary.total}개`;
+            if (resourcepacksSummary.total > 0) {
+                message += `, 리소스팩: ${resourcepacksSummary.success}/${resourcepacksSummary.total}개`;
+            }
+            message += ')';
+            
             return {
                 success: true,
-                message: `모드팩 설치 완료! (${result.summary.success}/${result.summary.total}개 모드 설치됨)`,
+                message: message,
                 summary: result.summary,
                 results: result.results
             };
@@ -854,14 +863,35 @@ ipcMain.handle('check-modpack-updates', async () => {
     try {
         const fabricInstalled = await checkFabricInstalled();
         const modsCount = await getInstalledModsCount();
+        const resourcepacksCount = await getInstalledResourcepacksCount();
         
-        const needsUpdate = !fabricInstalled || modsCount < 5;
+        // modpack-config.json에서 예상 개수 확인
+        let expectedModsCount = 13; // 기본값 (최신: EMF, ETF, Not Enough Animations 포함)
+        let expectedResourcepacksCount = 1; // 기본값 (Fresh Moves 활성화됨)
+        
+        try {
+            const modpackConfig = await fs.readJson(path.join(__dirname, 'modpack-config.json'));
+            expectedModsCount = modpackConfig.mods ? modpackConfig.mods.length : 10;
+            expectedResourcepacksCount = modpackConfig.resourcepacks ? modpackConfig.resourcepacks.length : 0;
+            
+            console.log(`🔍 예상 모드 개수: ${expectedModsCount}, 현재 설치: ${modsCount}`);
+            console.log(`🔍 예상 리소스팩 개수: ${expectedResourcepacksCount}, 현재 설치: ${resourcepacksCount}`);
+        } catch (configError) {
+            console.warn('⚠️ 모드팩 설정 로드 실패, 기본값 사용');
+        }
+        
+        const needsUpdate = !fabricInstalled || 
+                          modsCount < expectedModsCount || 
+                          resourcepacksCount < expectedResourcepacksCount;
         
         return {
             success: true,
             needsUpdate: needsUpdate,
             fabricInstalled: fabricInstalled,
-            modsCount: modsCount
+            modsCount: modsCount,
+            expectedModsCount: expectedModsCount,
+            resourcepacksCount: resourcepacksCount,
+            expectedResourcepacksCount: expectedResourcepacksCount
         };
     } catch (error) {
         return {
@@ -927,10 +957,10 @@ ipcMain.handle('load-settings', async () => {
             const defaultSettings = {
                 serverIP: 'localhost:25565',
                 username: 'Player',
-                memory: '4G',
+                memory: '8G', // 기본값 8GB로 상향
                 autoConnect: false,
                 enableBgm: true,
-                authDuration: 14,
+                authDuration: 90,
                 launcherAction: 'close',
                 performanceProfile: 'balanced',
                 gpuOptimization: true,
@@ -950,10 +980,10 @@ ipcMain.handle('load-settings', async () => {
         return {
             serverIP: 'localhost:25565',
             username: 'Player',
-            memory: '4G',
+            memory: '8G', // 기본값 8GB로 상향
             autoConnect: false,
             enableBgm: true,
-            authDuration: 14,
+            authDuration: 90,
             launcherAction: 'close',
             performanceProfile: 'balanced',
             gpuOptimization: true,
@@ -1041,6 +1071,11 @@ function getModsDir() {
     return path.join(getMinecraftDir(), 'mods');
 }
 
+// 리소스팩 디렉토리 경로
+function getResourcepacksDir() {
+    return path.join(getMinecraftDir(), 'resourcepacks');
+}
+
 // 설정 파일 경로
 function getConfigPath() {
     return path.join(__dirname, 'config.json');
@@ -1096,6 +1131,21 @@ async function getInstalledModsCount() {
         
         const files = await fs.readdir(modsDir);
         return files.filter(file => file.endsWith('.jar')).length;
+    } catch (error) {
+        return 0;
+    }
+}
+
+// 설치된 리소스팩 개수 확인
+async function getInstalledResourcepacksCount() {
+    try {
+        const resourcepacksDir = getResourcepacksDir();
+        if (!await fs.pathExists(resourcepacksDir)) {
+            return 0;
+        }
+        
+        const files = await fs.readdir(resourcepacksDir);
+        return files.filter(file => file.endsWith('.zip') || file.endsWith('.jar')).length;
     } catch (error) {
         return 0;
     }

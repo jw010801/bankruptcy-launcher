@@ -88,7 +88,92 @@
       "fileName": "iris-1.7.5+mc1.20.1.jar",
       "modId": "iris",
       "note": "한글 폰트 문제가 있을 경우 비활성화하세요"
+    },
+    {
+      "name": "Not Enough Animations",
+      "description": "3인칭 시점 애니메이션 대폭 개선 (1인칭→3인칭 변환)",
+      "required": false,
+      "downloadUrl": "https://github.com/tr7zw/NotEnoughAnimations/releases/download/1.9.0/notenoughanimations-fabric-1.9.0-mc1.20.1.jar",
+      "fileName": "notenoughanimations-fabric-1.9.0-mc1.20.1.jar",
+      "modId": "notenoughanimations",
+      "note": "설국열차 생존에 몰입감 있는 애니메이션 (먹기/마시기/방패/사다리/크롤링)"
+    },
+    {
+      "name": "Entity Model Features",
+      "description": "커스텀 엔티티 모델 지원 (Fresh Moves 리소스팩 필수 요구사항)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/4I1XuqiY/versions/X2NBK99f/entity_model_features_fabric_1.20.1-2.4.1.jar",
+      "fileName": "entity_model_features_fabric_1.20.1-2.4.1.jar",
+      "modId": "entity_model_features",
+      "note": "Fresh Moves와 고급 애니메이션 리소스팩 지원 (2024년 12월 최신)"
+    },
+    {
+      "name": "Entity Texture Features",
+      "description": "커스텀 엔티티 텍스처 지원 (Fresh Moves 리소스팩 필수 요구사항)",
+      "required": true,
+      "downloadUrl": "https://cdn.modrinth.com/data/BVzZfTc1/versions/3VwlPPf2/entity_texture_features_fabric_1.20.1-6.2.8.jar",
+      "fileName": "entity_texture_features_fabric_1.20.1-6.2.8.jar",
+      "modId": "entity_texture_features",
+      "note": "Fresh Moves 스킨 투명도 및 텍스처 기능 지원 (2024년 11월 최신)"
+    },
+    {
+      "name": "Korean Patch",
+      "description": "마인크래프트 한글화 패치 (UI, 인벤토리, 설정 등 완전 한글화)",
+      "required": false,
+      "downloadUrl": "https://cdn.modrinth.com/data/qyulnpBL/versions/n2HgO4ma/koreanpatch-fabric-1.8.3%2Bmc1.20.1.jar",
+      "fileName": "koreanpatch-fabric-1.8.3+mc1.20.1.jar",
+      "modId": "korean-patch",
+      "note": "설국열차 서바이벌을 더 편하게! 모든 메뉴와 아이템이 한글로 번역됩니다"
+    },
+    {
+      "name": "Simple Voice Chat",
+      "description": "근거리 음성 채팅 (설국열차 생존 팀플레이 필수!)",
+      "required": false,
+      "downloadUrl": "https://cdn.modrinth.com/data/9eGKb6K1/versions/QuG5IP28/voicechat-fabric-1.20.1-2.5.30.jar",
+      "fileName": "voicechat-fabric-1.20.1-2.5.30.jar",
+      "modId": "simple-voice-chat",
+      "note": "실시간 음성 소통! 서버에 Paper 플러그인 설치 필요"
     }
+  ],
+  "resourcepacks": [
+    {
+      "name": "Fresh Moves",
+      "description": "부드러운 플레이어 애니메이션 + 깜빡이는 눈 애니메이션 (걷기, 달리기, 숨쉬기, 수면 등)",
+      "version": "3.1",
+      "required": false,
+      "downloadUrl": "https://cdn.modrinth.com/data/slufHzC2/versions/4uyHvhnf/-1.21.2%20Fresh%20Moves%20v3.1%20%28With%20Animated%20Eyes%29.zip",
+      "fileName": "-1.21.2 Fresh Moves v3.1 (With Animated Eyes).zip",
+      "packId": "fresh-moves",
+      "note": "EMF/ETF 모드와 함께 사용시 최고의 애니메이션 효과 + 깜빡이는 눈 (설국열차 몰입감 극대화)",
+      "compatibility": "1.20.1",
+      "features": [
+        "부드러운 걷기/달리기 애니메이션",
+        "자연스러운 숨쉬기 모션",
+        "개선된 수면 자세",
+        "케이프 물리학 적용",
+        "몰래다니기 발 개선",
+        "깜빡이는 눈 애니메이션 (플레이어 표정)"
+      ]
+    },
+    {
+      "name": "Better Hangul Font",
+      "description": "개선된 한글 폰트 (더 깔끔하고 읽기 쉬운 한글 표시)",
+      "version": "latest",
+      "required": false,
+      "downloadUrl": "https://github.com/oruur/bhf4mc/raw/master/BetterHangulFont.zip",
+      "fileName": "BetterHangulFont.zip",
+      "packId": "better-hangul-font",
+      "note": "Korean Patch 모드와 함께 사용시 완벽한 한글 환경 구축",
+      "compatibility": "1.20.1",
+      "features": [
+        "더 깔끔한 한글 폰트",
+        "가독성 향상",
+        "UI 텍스트 개선",
+        "Korean Patch와 최적 호환"
+      ]
+    }
+  ],
+  "resourcepacks_disabled_temporarily": [
   ],
   "serverInfo": {
     "ip": "localhost:25565",

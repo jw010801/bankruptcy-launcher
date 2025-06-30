@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>파산게임 런처</title>
+    <title>설국열차 서바이벌 런처</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
             <div class="titlebar-icon">
                 <img src="assets/icon-small.png" alt="아이콘">
             </div>
-            <div class="titlebar-title">파산게임 런처</div>
+            <div class="titlebar-title">설국열차 서바이벌 런처</div>
         </div>
         <div class="titlebar-controls">
             <button class="titlebar-button" id="minimize-btn">─</button>
@@ -45,8 +45,8 @@
             <main class="main-content">
                 <!-- 게임 제목 -->
                 <div class="game-title">
-                    <h1>파산게임</h1>
-                    <p>부의 게임에 도전하세요!</p>
+                    <h1>설국열차 서바이벌</h1>
+                    <p>극한의 추위에서 살아남으세요!</p>
                 </div>
 
                 <!-- 플레이 버튼 -->
@@ -109,46 +109,46 @@
 
                 <!-- 서버 통계 섹션 -->
                 <div class="server-stats-section">
-                    <h3>📊 서버 통계</h3>
+                    <h3>🚂 열차 현황</h3>
                     <div class="stats-grid">
                         <div class="stat-item">
-                            <span class="stat-label">총 플레이어</span>
+                            <span class="stat-label">총 생존자</span>
                             <span class="stat-value" id="total-players">156</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">활성 경매</span>
-                            <span class="stat-value" id="active-auctions">12</span>
+                            <span class="stat-label">활성 광산</span>
+                            <span class="stat-value" id="active-mines">3</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">파산자 수</span>
-                            <span class="stat-value" id="bankrupts">3</span>
+                            <span class="stat-label">탈출 성공자</span>
+                            <span class="stat-value" id="escaped-players">7</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">최고 자산</span>
-                            <span class="stat-value" id="richest-player">50M</span>
+                            <span class="stat-label">최고 보석</span>
+                            <span class="stat-value" id="richest-player">💎25</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- 게임 가이드 섹션 -->
                 <div class="game-guide-section">
-                    <h3>💡 게임 가이드</h3>
+                    <h3>🚂 서바이벌 가이드</h3>
                     <div class="guide-tips">
                         <div class="tip-item">
-                            <span class="tip-icon">🎰</span>
-                            <span class="tip-text">카지노에서 운을 시험해보세요</span>
+                            <span class="tip-icon">❄️</span>
+                            <span class="tip-text">체온 유지로 생존 확률 증가</span>
                         </div>
                         <div class="tip-item">
-                            <span class="tip-icon">💰</span>
-                            <span class="tip-text">경매로 희귀 아이템 획득</span>
+                            <span class="tip-icon">⛏️</span>
+                            <span class="tip-text">광산에서 보석 채굴하여 부 축적</span>
                         </div>
                         <div class="tip-item">
-                            <span class="tip-icon">📈</span>
-                            <span class="tip-text">주식 투자로 안정적 수익</span>
+                            <span class="tip-icon">🎯</span>
+                            <span class="tip-text">미니게임으로 추가 생존 점수</span>
                         </div>
                         <div class="tip-item">
-                            <span class="tip-icon">🏠</span>
-                            <span class="tip-text">부동산으로 임대 수익</span>
+                            <span class="tip-icon">🏃</span>
+                            <span class="tip-text">기관실 도달 시 최종 탈출 성공</span>
                         </div>
                     </div>
                 </div>
@@ -269,9 +269,27 @@
                         <option value="1">1일</option>
                         <option value="3">3일</option>
                         <option value="7">1주일</option>
-                        <option value="14" selected>2주일</option>
+                        <option value="14">2주일</option>
                         <option value="30">1개월</option>
+                        <option value="90" selected>90일 (추천 - Refresh Token 활용)</option>
                     </select>
+                    <div class="setting-description">
+                        <strong>🔑 자동 로그인 가이드:</strong><br>
+                        • <span style="color: #27ae60;"><strong>90일 (추천)</strong></span>: Microsoft Refresh Token 최대 활용<br>
+                        • <span style="color: #f39c12;">1개월</span>: 적당한 보안과 편의성<br>
+                        • <span style="color: #e74c3c;">1-2주</span>: 높은 보안, 자주 재로그인
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="keep-logins" checked>
+                        <span class="checkmark"></span>
+                        로그인 정보 저장
+                    </label>
+                    <div class="setting-description">
+                        <small>Microsoft 계정 인증 정보를 안전하게 암호화하여 저장합니다</small>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">

@@ -415,39 +415,39 @@
         }
 
         /**
-         * 메모리 할당량 가져오기
+         * 메모리 할당량 가져오기 (설정 파일 우선)
          */
         async getMemoryAllocation() {
-            // 1. DOM 요소에서 현재 값 시도
-            const memorySelect = document.getElementById('memory-allocation');
             let memory = null;
             
-            if (memorySelect && memorySelect.value) {
-                memory = memorySelect.value;
-                console.log('🧠 DOM에서 메모리 로드:', memory);
-            } else {
-                console.log('🧠 DOM 요소 없음, 저장된 설정에서 로드 시도...');
-                
-                // 2. IPC를 통해 config.json에서 로드 시도
-                try {
-                    if (this.ipcRenderer) {
-                        const config = await this.ipcRenderer.invoke('load-settings');
-                        memory = config.memory || '4G';
-                        console.log('🧠 config.json에서 메모리 로드:', memory);
-                    } else if (window.storageManager) {
-                        const config = await window.storageManager.loadConfig();
-                        memory = config.memory || '4G';
-                        console.log('🧠 localStorage에서 메모리 로드:', memory);
-                    }
-                } catch (error) {
-                    console.warn('🧠 설정 로드 실패:', error);
+            // 1. 먼저 저장된 설정에서 로드 (가장 신뢰할 수 있는 소스)
+            try {
+                if (this.ipcRenderer) {
+                    const config = await this.ipcRenderer.invoke('load-settings');
+                    memory = config.memory;
+                    console.log('🧠 config.json에서 메모리 로드:', memory);
+                } else if (window.storageManager) {
+                    const config = await window.storageManager.loadConfig();
+                    memory = config.memory;
+                    console.log('🧠 localStorage에서 메모리 로드:', memory);
                 }
-                
-                // 3. 모든 방법 실패시 기본값
-                if (!memory) {
-                    memory = '4G';
-                    console.log('🧠 기본값 사용:', memory);
+            } catch (error) {
+                console.warn('🧠 설정 로드 실패:', error);
+            }
+            
+            // 2. 설정 로드 실패 시 DOM 요소에서 시도 (보조 방법)
+            if (!memory) {
+                const memorySelect = document.getElementById('memory-allocation');
+                if (memorySelect && memorySelect.value) {
+                    memory = memorySelect.value;
+                    console.log('🧠 DOM에서 메모리 로드 (Fallback):', memory);
                 }
+            }
+            
+            // 3. 모든 방법 실패시 기본값 (8GB로 변경)
+            if (!memory) {
+                memory = '8G'; // 기본값을 8GB로 상향 조정
+                console.log('🧠 기본값 사용 (8GB):', memory);
             }
             
             console.log('🧠 최종 메모리 할당량:', memory);

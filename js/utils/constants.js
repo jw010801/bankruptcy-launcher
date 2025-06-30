@@ -13,7 +13,7 @@ window.CONSTANTS.DEFAULT_SETTINGS = {
     memory: '2G',
     autoConnect: false,
     enableBgm: true,
-    authDuration: 14 // 기본값: 2주
+    authDuration: 90 // 기본값: 90일 (Refresh Token 최대 활용)
 };
 
 // 인증 관련 상수

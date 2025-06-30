@@ -131,7 +131,7 @@
                 masterVolume: 0.7,
                 bgmVolume: 0.5,
                 sfxVolume: 0.8,
-                authDuration: 14,
+                authDuration: 90,
                 autoUpdate: true,
                 debugMode: false,
                 keepLogins: true,

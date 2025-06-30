@@ -36,9 +36,9 @@
                 if (savedAuth && savedAuth.username) {
                     console.log('💾 저장된 인증 정보 발견:', savedAuth.username);
                     
-                    // 설정에서 로그인 유지 기간 가져오기 (기본값: 14일)
+                    // 설정에서 로그인 유지 기간 가져오기 (기본값: 90일)
                     const settings = await window.storageManager.get('settings') || {};
-                    const authDuration = settings.authDuration || 14; // 일 단위
+                    const authDuration = settings.authDuration || 90; // 일 단위
                     
                     // 설정된 기간만큼 유효성 확인
                     const validDays = authDuration * 24 * 60 * 60 * 1000; // 밀리초로 변환

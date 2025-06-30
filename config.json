@@ -5,7 +5,7 @@
   "autoConnect": false,
   "launcherAction": "close",
   "enableBgm": true,
-  "authDuration": 14,
+  "authDuration": 90,
   "masterVolume": 0.7,
   "bgmVolume": 0.5,
   "sfxVolume": 0.8,

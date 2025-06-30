@@ -251,7 +251,7 @@
                 autoConnect: false,
                 launcherAction: 'minimize', // 게임 시작 후 런처 동작 (minimize/keep/close)
                 enableBgm: true,
-                authDuration: 14,
+                authDuration: 90,
                 masterVolume: 0.7,
                 bgmVolume: 0.5,
                 sfxVolume: 0.8,
@@ -311,7 +311,7 @@
                 if (this.autoUpdateCheck) this.autoUpdateCheck.checked = this.currentSettings.autoUpdate !== false;
                 if (this.debugModeCheck) this.debugModeCheck.checked = this.currentSettings.debugMode || false;
                 if (this.keepLoginsCheck) this.keepLoginsCheck.checked = this.currentSettings.keepLogins !== false;
-                if (this.authDurationSelect) this.authDurationSelect.value = this.currentSettings.authDuration || 14;
+                if (this.authDurationSelect) this.authDurationSelect.value = this.currentSettings.authDuration || 90;
                 
                 console.log('📋 설정 폼 로드 완료');
                 
@@ -335,7 +335,7 @@
                     autoConnect: this.autoConnectCheck?.checked || false,
                     launcherAction: this.launcherActionSelect?.value || 'minimize',
                     enableBgm: this.enableBgmCheck?.checked !== false,
-                    authDuration: parseInt(this.authDurationSelect?.value) || 14,
+                    authDuration: parseInt(this.authDurationSelect?.value) || 90,
                     masterVolume: (this.masterVolumeSlider?.value || 70) / 100,
                     bgmVolume: (this.bgmVolumeSlider?.value || 50) / 100,
                     sfxVolume: (this.sfxVolumeSlider?.value || 80) / 100,
@@ -375,8 +375,8 @@
                 
                 // 2. localStorage에도 백업 저장
                 try {
-                    if (window.storageManager) {
-                        await window.storageManager.saveConfig(newSettings);
+                if (window.storageManager) {
+                    await window.storageManager.saveConfig(newSettings);
                         console.log('✅ localStorage 백업 저장 성공');
                         if (!saveSuccess) saveSuccess = true; // config.json 실패 시 fallback
                     }
